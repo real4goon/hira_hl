@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>타병원 인프라 비교 v3.7</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14213D; --ink-soft:#3A4A63;
+    --paper:#F4F6F5; --panel:#FFFFFF;
+    --accent:#2A6F6F; --accent-soft:#E4EFEE;
+    --brick:#C4432B; --brick-soft:#F6E7E2;
+    --gold:#B8863E; --gold-soft:#F3EBDB;
+    --line:#DBE1DE; --line-soft:#EAEEEC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Pretendard',-apple-system,sans-serif;
+  }
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- 좌측 사이드바 ---------- */
+  .sidebar{
+    width:280px; flex-shrink:0; background:var(--ink); color:#fff;
+    padding:22px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  .sidebar .eyebrow{font-size:11px;letter-spacing:.14em;color:#8FD3C9;font-weight:600;}
+  .versionbadge{
+    display:inline-block;background:var(--brick);color:#fff;font-size:12px;font-weight:800;
+    padding:3px 10px;border-radius:20px;margin:6px 0 4px;letter-spacing:.03em;
+  }
+  .sidebar h1{font-family:'Noto Serif KR',serif;font-size:19px;margin:4px 0 16px;}
+  .sidebar input[type=text]{
+    width:100%;border:none;border-radius:8px;padding:9px 11px;font-size:13px;
+    font-family:inherit;margin-bottom:10px;background:rgba(255,255,255,.1);color:#fff;
+  }
+  .sidebar input[type=text]::placeholder{color:rgba(255,255,255,.5);}
+  .selrow{display:flex;gap:6px;margin-bottom:12px;}
+  .selrow button{
+    flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+    color:#fff;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit;
+  }
+  .region-title{font-size:10.5px;letter-spacing:.08em;color:rgba(255,255,255,.45);font-weight:700;margin:14px 0 4px;text-transform:uppercase;}
+  .hitem{
+    display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:12.5px;cursor:pointer;
+    border-radius:6px;
+  }
+  .hitem:hover{background:rgba(255,255,255,.06);}
+  .hitem input{accent-color:#8FD3C9;width:14px;height:14px;flex-shrink:0;}
+  .hitem.hidden{display:none;}
+  .hitem .mine{color:#F6B375;font-weight:700;}
+
+  .keybox{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15);}
+  .keybox label{font-size:11px;color:rgba(255,255,255,.6);display:block;margin-bottom:6px;}
+  .keybox .krow{display:flex;gap:6px;}
+  .keybox input{flex:1;}
+  .keybox .clr{background:var(--brick);border:none;color:#fff;border-radius:6px;padding:0 10px;font-size:11px;cursor:pointer;}
+
+  .runbtn{
+    width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;
+    padding:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:14px;
+  }
+  .runbtn:disabled{background:rgba(255,255,255,.15);}
+
+  /* ---------- 메인 ---------- */
+  .main{flex:1;padding:32px 28px 80px;min-width:0;}
+  .main .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:6px;}
+  .main h2{font-family:'Noto Serif KR',serif;font-size:20px;margin:0;}
+  .main .src{font-size:11px;color:var(--ink-soft);}
+  .status{font-size:13px;color:var(--ink-soft);margin:10px 0 18px;min-height:18px;}
+  .status.error{color:var(--brick);}
+  .progress-track{background:var(--line-soft);border-radius:6px;height:8px;overflow:hidden;margin-bottom:18px;display:none;}
+  .progress-fill{height:100%;background:var(--accent);width:0%;transition:width .2s;}
+
+  .results{display:none;flex-direction:column;gap:14px;}
+  .metric-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+  .metric-card .mhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+  .metric-card .mtitle{font-weight:700;font-size:14px;}
+  .metric-card .munit{font-size:11px;color:var(--ink-soft);}
+  .bar-row{display:grid;grid-template-columns:130px 1fr 54px;align-items:center;gap:10px;padding:5px 0;font-size:12.5px;}
+  .bar-row .name{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-row .name.me{color:var(--brick);font-weight:700;}
+  .bar-track{background:var(--line-soft);border-radius:5px;height:14px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--accent);border-radius:5px 0 0 5px;transition:width .4s ease;}
+  .bar-fill.me{background:var(--brick);}
+  .bar-fill.rank1{background:var(--gold);}
+  .bar-row .val{text-align:right;font-weight:700;font-size:12px;}
+
+  .grade-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line-soft);font-size:12.5px;}
+  .grade-row:last-child{border-bottom:none;}
+  .grade-badge{background:var(--gold-soft);color:var(--gold);font-weight:800;font-size:12.5px;padding:2px 11px;border-radius:20px;min-width:34px;text-align:center;}
+
+  .exportbtn{background:#217346;color:#fff;border:none;border-radius:8px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;display:none;}
+  .empty-hint{text-align:center;color:#9AA3A0;font-size:14px;padding:60px 20px;border:2px dashed var(--line);border-radius:12px;}
+
+  @media (max-width: 820px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;height:auto;position:relative;max-height:60vh;}
+    .main{padding:20px 14px 60px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="sidebar">
+    <div class="eyebrow">HIRA OPEN API</div>
+    <div class="versionbadge" id="versionBadge">v3.7</div>
+    <h1>상급종합병원 47</h1>
+
+    <div class="keybox" style="border-top:none;margin-top:0;padding-top:0;">
+      <label>① 서버 연결 상태</label>
+      <div style="background:rgba(255,255,255,.08);border-radius:8px;padding:9px 11px;font-size:12px;color:#8FD3C9;">
+        ✅ Apps Script 프록시 연결됨 (인증키 서버에 보관중)
+      </div>
+    </div>
+    <button class="runbtn" id="runBtn" onclick="runCompare()">② 선택 병원 비교 시작</button>
+    <button class="runbtn" style="background:transparent;border:1px solid rgba(255,255,255,.25);margin-top:6px;font-size:11px;padding:8px;" onclick="clearCache()">저장된 캐시 지우기</button>
+
+    <div style="margin:18px 0 8px;font-size:11px;color:rgba(255,255,255,.5);">③ 비교할 병원 선택</div>
+    <input type="text" id="filterInput" placeholder="병원명 검색…" oninput="filterList()">
+    <div class="selrow">
+      <button onclick="selectAll(true)">전체선택</button>
+      <button onclick="selectAll(false)">전체해제</button>
+    </div>
+    <div id="hospListBox"></div>
+  </div>
+
+  <div class="main">
+    <div class="top">
+      <h2>인프라 비교 결과 <span style="font-family:'Pretendard';font-size:13px;background:var(--brick-soft);color:var(--brick);padding:3px 10px;border-radius:20px;vertical-align:middle;">v3.7</span></h2>
+      <div class="src">병원정보서비스 · 의료기관별상세정보서비스</div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="progress-track" id="progTrack"><div class="progress-fill" id="progFill"></div></div>
+
+    <div id="emptyHint" class="empty-hint">왼쪽에서 병원을 선택하고 [비교 시작]을 눌러주세요.<br>동시에 최대 6곳씩 병렬로 조회해 빠르게 수집합니다.</div>
+    <div class="results" id="results"></div>
+    <button class="exportbtn" id="exportBtn" onclick="exportExcel()">📊 엑셀로 다운로드</button>
+  </div>
+
+</div>
+
+<script>
+// Apps Script 프록시 주소 (인증키는 여기 서버 속성에 보관되어 코드에 노출되지 않음)
+const PROXY_URL = "https://script.google.com/macros/s/AKfycbyhyoMXpqhexIxlhkUv64ucPmP8-N2AMl5sb4zrj3-m6Ufdh3tYjxWLhW0JMvslOcFVdQ/exec";
+
+// 제5기(2024~2026) 상급종합병원 47개소 — 표시명: [검색용 병원명, 지역]
+const HOSPITALS = [
+  ["한림대학교성심병원","경기남부권"],
+  ["강북삼성병원","서울권"],["건국대학교병원","서울권"],["경희대학교병원","서울권"],
+  ["고려대학교구로병원","서울권"],["삼성서울병원","서울권"],["서울대학교병원","서울권"],
+  ["강남세브란스병원","서울권"],["세브란스병원","서울권"],["이화여자대학교부속목동병원","서울권"],
+  ["서울아산병원","서울권"],["중앙대학교병원","서울권"],["고려대학교안암병원","서울권"],
+  ["가톨릭대학교서울성모병원","서울권"],["한양대학교병원","서울권"],
+  ["가톨릭대학교인천성모병원","경기서북부권"],["가천대학교길병원","경기서북부권"],
+  ["인하대학교병원","경기서북부권"],["순천향대학교부속부천병원","경기서북부권"],
+  ["가톨릭대학교성빈센트병원","경기남부권"],["고려대학교안산병원","경기남부권"],
+  ["분당서울대학교병원","경기남부권"],["아주대학교병원","경기남부권"],
+  ["강릉아산병원","강원권"],["연세대학교원주세브란스기독병원","강원권"],
+  ["충북대학교병원","충청권"],["건양대학교병원","충청권"],["충남대학교병원","충청권"],
+  ["단국대학교병원","충청권"],
+  ["원광대학교병원","호남제주권"],["전북대학교병원","호남제주권"],
+  ["전남대학교병원","호남제주권"],["조선대학교병원","호남제주권"],["화순전남대학교병원","호남제주권"],
+  ["경북대학교병원","영남권"],["계명대학교동산병원","영남권"],["대구가톨릭대학교병원","영남권"],
+  ["영남대학교병원","영남권"],["칠곡경북대학교병원","영남권"],
+  ["고신대학교복음병원","영남권"],["동아대학교병원","영남권"],["부산대학교병원","영남권"],
+  ["양산부산대학교병원","영남권"],["인제대학교부산백병원","영남권"],["울산대학교병원","영남권"],
+  ["경상국립대학교병원","영남권"],["성균관대학교삼성창원병원","영남권"],
+];
+
+const BASIS_PATH = "B551182/hospInfoServicev2/getHospBasisList";
+const DETAIL_BASE_PATH = "B551182/MadmDtlInfoService2.8";
+const CONCURRENCY = 2; // 동시에 몇 개 병원씩 처리할지 (Apps Script 동시 요청 제한 고려)
+
+// ---- 로컬 캐시 (localStorage) ----
+// 참고: Claude 채팅 미리보기 화면에서는 브라우저 저장소가 비활성화되어 있어
+// 이 기능이 동작하지 않습니다. GitHub Pages에 올리거나 파일로 저장해 여신 뒤에만 정상 작동합니다.
+function saveCache(data){
+  try{
+    localStorage.setItem(`infra_${data.name}`, JSON.stringify({ ...data, ts: new Date().toISOString() }));
+  }catch(e){ /* 저장소 접근 불가 - 조용히 무시 */ }
+}
+function loadCache(name){
+  try{
+    const raw = localStorage.getItem(`infra_${name}`);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearCache(){
+  try{
+    HOSPITALS.forEach(([name])=> localStorage.removeItem(`infra_${name}`));
+    statusMsg("저장된 캐시를 모두 지웠습니다.");
+  }catch(e){ statusMsg("이 화면에서는 캐시 저장소를 사용할 수 없습니다.", true); }
+}
+
+let selected = new Set(["한림대학교성심병원","서울대학교병원","삼성서울병원","서울아산병원"]);
+let collected = [];
+
+function renderList(){
+  const box = document.getElementById("hospListBox");
+  box.innerHTML = "";
+  let lastRegion = "";
+  HOSPITALS.forEach(([name, region])=>{
+    if(region !== lastRegion){
+      const rt = document.createElement("div");
+      rt.className = "region-title";
+      rt.textContent = region;
+      box.appendChild(rt);
+      lastRegion = region;
+    }
+    const row = document.createElement("label");
+    row.className = "hitem";
+    row.dataset.name = name;
+    const isMine = name.includes("한림");
+    const cached = loadCache(name);
+    const cacheTag = cached ? `<span style="margin-left:auto;font-size:9.5px;color:#8FD3C9;">●</span>` : "";
+    row.innerHTML = `<input type="checkbox" ${selected.has(name)?"checked":""}
+      onchange="toggleHosp('${name}', this.checked)">
+      <span class="${isMine?'mine':''}">${name}</span>${cacheTag}`;
+    box.appendChild(row);
+  });
+}
+function toggleHosp(name, on){ on ? selected.add(name) : selected.delete(name); }
+function selectAll(on){
+  document.querySelectorAll('#hospListBox input[type=checkbox]').forEach(cb=>{
+    if(cb.closest('.hitem').classList.contains('hidden')) return;
+    cb.checked = on;
+    toggleHosp(cb.closest('.hitem').dataset.name, on);
+  });
+}
+function filterList(){
+  const q = document.getElementById("filterInput").value.trim();
+  document.querySelectorAll('#hospListBox .hitem').forEach(el=>{
+    el.classList.toggle("hidden", q && !el.dataset.name.includes(q));
+  });
+  document.querySelectorAll('#hospListBox .region-title').forEach(el=>{
+    // 지역명 아래 항목이 전부 숨겨지면 지역명도 숨김
+    let next = el.nextElementSibling, anyVisible = false;
+    while(next && !next.classList.contains('region-title')){
+      if(!next.classList.contains('hidden')) anyVisible = true;
+      next = next.nextElementSibling;
+    }
+    el.style.display = anyVisible ? "" : "none";
+  });
+}
+renderList();
+
+// 페이지 로드시: 선택된 병원 중 캐시된 데이터가 있으면 자동 복원
+(function restoreFromCache(){
+  const cachedList = [...selected].map(loadCache).filter(Boolean);
+  if(cachedList.length > 0){
+    collected = cachedList;
+    document.getElementById("emptyHint").style.display = "none";
+    renderResults(cachedList);
+    document.getElementById("exportBtn").style.display = "inline-block";
+    statusMsg(`캐시에서 ${cachedList.length}개 병원 데이터를 불러왔습니다. (이 미리보기 화면에서는 새로고침 시 사라집니다)`);
+  }
+})();
+
+function statusMsg(t, err){
+  const el = document.getElementById("status");
+  el.textContent = t;
+  el.className = "status" + (err?" error":"");
+}
+
+async function callApi(path, params){
+  const qs = new URLSearchParams(Object.assign({ path: path, pageNo:1, numOfRows:100 }, params));
+  const res = await fetch(PROXY_URL + "?" + qs.toString(), { signal: AbortSignal.timeout(15000) });
+  if(!res.ok) throw new Error("프록시 응답 오류 (" + res.status + ")");
+  return await res.json();
+}
+function items(json){
+  try{
+    const body = json.response && json.response.body;
+    const it = body && body.items && body.items.item;
+    if(!it) return [];
+    return Array.isArray(it) ? it : [it];
+  }catch(e){ return []; }
+}
+const num = v => Number(v) || 0;
+
+async function fetchHospital(name){
+  const basis = await callApi(BASIS_PATH, { yadmNm: name });
+  const bi = items(basis)[0];
+  if(!bi) return { name, error: "검색 결과 없음" };
+
+  const ykiho = bi.ykiho;
+  const data = {
+    name: bi.yadmNm || name,
+    drTotCnt: num(bi.drTotCnt),
+    sdrCnt: num(bi.mdeptSdrCnt) + num(bi.detySdrCnt) + num(bi.cmdcSdrCnt),
+    mriCnt:0, ctCnt:0, petCnt:0, sonoCnt:0,
+    nursingGrade:"-", dgsbjtCnt:0, spclDiagCnt:0, etcHstCnt:0,
+    permSbdCnt:0, stdSickbdCnt:0, hghrSickbdCnt:0,
+    trnsprtCnt:0, spclHospCnt:0, foepCnt:0
+  };
+
+  // 9개 상세정보를 3개씩 3번에 나눠 순차 호출 (Apps Script 동시 요청 제한 대응)
+  const detailCalls = [
+    ["getMedOftInfo2.8"], ["getNursigGrdInfo2.8"], ["getDgsbjtInfo2.8"],
+    ["getSpclDiagInfo2.8"], ["getEtcHstInfo2.8"], ["getDtlInfo2.8"],
+    ["getTrnsprtInfo2.8"], ["getSpclHospAsgFldList2.8"], ["getFoepAddcInfo2.8"],
+  ];
+  const results = [];
+  for(let i=0;i<detailCalls.length;i+=3){
+    const batch = detailCalls.slice(i,i+3).map(([op])=>
+      callApi(DETAIL_BASE_PATH + "/" + op, { ykiho }).catch(()=>({}))
+    );
+    results.push(...await Promise.all(batch));
+  }
+  const [eqp, nurs, dgsbjt, spcl, etc, dtl, trnsprt, spclHosp, foep] = results;
+
+  items(eqp).forEach(e=>{
+    const nm = (e.oftCdNm||"").toUpperCase();
+    const c = num(e.oftCnt);
+    if(nm.includes("MRI") || nm.includes("자기공명")) data.mriCnt += c;
+    if(nm.includes("CT") || nm.includes("전산화") || nm.includes("단층")) data.ctCnt += c;
+    if(nm.includes("PET") || nm.includes("양전자")) data.petCnt += c;
+    if(nm.includes("초음파")) data.sonoCnt += c;
+  });
+  const hi = items(nurs).find(n => String(n.tyCd) === "01");
+  if(hi) data.nursingGrade = String(hi.careGrd);
+  data.dgsbjtCnt = items(dgsbjt).length;
+  data.spclDiagCnt = items(spcl).length;
+  data.etcHstCnt = items(etc).reduce((s,e)=> s + num(e.gnlNopCnt), 0);
+
+  // --- 신규 추가: 세부정보 / 교통정보 / 전문병원지정분야 / 식대가산정보 ---
+  const dtlItem = items(dtl)[0];
+  if(dtlItem){
+    data.permSbdCnt = num(dtlItem.permSbdCnt);
+    data.stdSickbdCnt = num(dtlItem.stdSickbdCnt);
+    data.hghrSickbdCnt = num(dtlItem.hghrSickbdCnt);
+  }
+  data.trnsprtCnt = items(trnsprt).length;
+  data.spclHospCnt = items(spclHosp).length;
+  data.foepCnt = items(foep).length;
+
+  return data;
+}
+
+// 동시에 CONCURRENCY개씩 처리하는 병렬 러너
+async function runPool(list, worker, onProgress){
+  const results = new Array(list.length);
+  let idx = 0, done = 0;
+  async function next(){
+    while(idx < list.length){
+      const my = idx++;
+      try{ results[my] = await worker(list[my]); }
+      catch(e){ results[my] = { name:list[my], error:e.message }; }
+      done++;
+      onProgress(done, list.length);
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(CONCURRENCY,list.length)}, next));
+  return results;
+}
+
+async function runCompare(){
+  const list = [...selected];
+  if(list.length === 0){ statusMsg("병원을 1곳 이상 선택해주세요.", true); return; }
+  const btn = document.getElementById("runBtn");
+  btn.disabled = true;
+  document.getElementById("emptyHint").style.display = "none";
+  document.getElementById("results").style.display = "none";
+  document.getElementById("exportBtn").style.display = "none";
+  document.getElementById("progTrack").style.display = "block";
+  document.getElementById("progFill").style.width = "0%";
+
+  statusMsg(`${list.length}개 병원 동시 수집 중 (최대 ${CONCURRENCY}곳씩 병렬)…`);
+
+  collected = await runPool(list, async (name)=>{
+    const d = await fetchHospital(name);
+    if(!d.error) saveCache(d);
+    return d;
+  }, (done,total)=>{
+    document.getElementById("progFill").style.width = Math.round(done/total*100) + "%";
+    statusMsg(`수집 중… ${done}/${total}`);
+  });
+
+  btn.disabled = false;
+  document.getElementById("progTrack").style.display = "none";
+  const ok = collected.filter(d=>!d.error);
+  if(ok.length === 0){ statusMsg("수집된 데이터가 없습니다.", true); document.getElementById("emptyHint").style.display="block"; return; }
+  statusMsg(`${ok.length}개 병원 수집 완료 (실패 ${collected.length-ok.length}개).`);
+  renderResults(ok);
+  document.getElementById("exportBtn").style.display = "inline-block";
+}
+
+function barCard(title, unit, key, data){
+  const max = Math.max(...data.map(d=>d[key]||0), 1);
+  const sorted = [...data].sort((a,b)=>b[key]-a[key]);
+  let rows = sorted.map((d,i)=>{
+    const pct = Math.round(((d[key]||0)/max)*100);
+    const isMine = d.name.includes("한림");
+    const fillCls = "bar-fill" + (isMine ? " me" : (i===0 ? " rank1" : ""));
+    return `<div class="bar-row">
+      <div class="name${isMine?' me':''}">${d.name}</div>
+      <div class="bar-track"><div class="${fillCls}" style="width:${pct}%"></div></div>
+      <div class="val">${(d[key]||0).toLocaleString()}</div>
+    </div>`;
+  }).join("");
+  return `<div class="metric-card"><div class="mhead"><div class="mtitle">${title}</div><div class="munit">${unit}</div></div>${rows}</div>`;
+}
+function gradeCard(data){
+  const rows = data.map(d=>{
+    const g = d.nursingGrade;
+    const show = (g === "-" || g === "undefined") ? "정보없음" : (isNaN(g) ? g : g + "등급");
+    return `<div class="grade-row"><div>${d.name}</div><div class="grade-badge">${show}</div></div>`;
+  }).join("");
+  return `<div class="metric-card"><div class="mhead"><div class="mtitle">간호등급 (건강보험 기준)</div><div class="munit">숫자가 낮을수록 상위 등급</div></div>${rows}</div>`;
+}
+function renderResults(data){
+  const box = document.getElementById("results");
+  box.innerHTML = [
+    barCard("의사총수","명","drTotCnt",data),
+    barCard("전문의 수 (의과+치과+한방)","명","sdrCnt",data),
+    barCard("MRI 보유대수","대","mriCnt",data),
+    barCard("CT 보유대수","대","ctCnt",data),
+    barCard("PET 보유대수","대","petCnt",data),
+    barCard("초음파 보유대수","대","sonoCnt",data),
+    gradeCard(data),
+    barCard("운영 진료과목 수","개","dgsbjtCnt",data),
+    barCard("특수진료 가능분야 수","개","spclDiagCnt",data),
+    barCard("기타 인력 총수","명","etcHstCnt",data),
+    barCard("허가병상수 (permSbdCnt)","병상 · 필드 검증 필요","permSbdCnt",data),
+    barCard("일반병상수 (stdSickbdCnt)","병상 · 필드 검증 필요","stdSickbdCnt",data),
+    barCard("상급병상수 (hghrSickbdCnt)","병상 · 필드 검증 필요","hghrSickbdCnt",data),
+    barCard("교통정보 등록 항목 수","건 · 참고용","trnsprtCnt",data),
+    barCard("전문병원 지정분야 수","개 · 참고용","spclHospCnt",data),
+    barCard("식대가산 등록 항목 수","건 · 참고용","foepCnt",data),
+  ].join("");
+  box.style.display = "flex";
+}
+function exportExcel(){
+  const data = collected.filter(d=>!d.error);
+  if(data.length===0) return;
+  const rows = data.map(d=>({
+    "병원명":d.name,"의사총수":d.drTotCnt,"전문의수":d.sdrCnt,
+    "MRI":d.mriCnt,"CT":d.ctCnt,"PET":d.petCnt,"초음파":d.sonoCnt,
+    "간호등급(건보)":d.nursingGrade,"진료과목수":d.dgsbjtCnt,
+    "특수진료분야수":d.spclDiagCnt,"기타인력총수":d.etcHstCnt,
+    "허가병상수(검증필요)":d.permSbdCnt,"일반병상수(검증필요)":d.stdSickbdCnt,"상급병상수(검증필요)":d.hghrSickbdCnt,
+    "교통정보항목수":d.trnsprtCnt,"전문병원지정분야수":d.spclHospCnt,"식대가산항목수":d.foepCnt
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "병원비교");
+  XLSX.writeFile(wb, `병원인프라비교_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+</script>
+</body>
+</html>
