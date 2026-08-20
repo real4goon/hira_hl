@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ko.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --navy:#16324f; --navy-light:#2c5583; --navy-deep:#0d1f33; --bg:#eef1f6; --card:#ffffff;
@@ -271,6 +272,40 @@
         </div>
         <div id="deptMgmtMsg"></div>
       </div>
+
+      <div class="card">
+        <h2>엑셀로 과거 데이터 가져오기</h2>
+        <p style="color:var(--muted);font-size:13px;margin-top:-6px;">엑셀 파일 하나 = 특정 하루치 데이터로 간주합니다. 날짜를 먼저 지정하고 파일을 읽으면, 기존 데이터와 비교해서 미리 보여드립니다. 확인하신 항목만 실제로 반영됩니다.</p>
+        <div class="grid2">
+          <div class="field"><label>이 파일의 날짜</label><input type="text" id="importDate" placeholder="날짜 선택"></div>
+          <div class="field"><label>엑셀 파일</label><input type="file" id="importFile" accept=".xlsx,.xls"></div>
+        </div>
+        <button class="btn secondary" id="importParseBtn">파일 읽고 비교하기</button>
+        <div id="importMsg"></div>
+        <div id="importPreviewWrap" style="display:none;margin-top:14px;overflow-x:auto;">
+          <table class="heat" id="importPreviewTable">
+            <thead><tr>
+              <th></th><th>부서</th><th>시간대</th>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>계</th>
+              <th>상태</th>
+            </tr></thead>
+            <tbody id="importPreviewBody"></tbody>
+          </table>
+          <p style="color:var(--muted);font-size:12px;margin-top:6px;">값이 다른 칸은 <b>기존값 → 엑셀값</b> 형태로 빨간색으로 표시됩니다.</p>
+          <button class="btn" id="importConfirmBtn" style="width:100%;margin-top:12px;">체크된 항목 반영하기</button>
+        </div>
+      </div>
+
+      <div class="card" style="border-color:var(--red);">
+        <h2 style="color:var(--red);">⚠️ 위험 구역 — 날짜 전체 삭제</h2>
+        <p style="color:var(--muted);font-size:13px;margin-top:-6px;">지정한 날짜의 모든 부서·시간대 데이터를 통째로 삭제합니다. 되돌릴 수 없으니 신중하게 사용하세요.</p>
+        <div class="grid2">
+          <div class="field"><label>삭제할 날짜</label><input type="text" id="deleteDate" placeholder="날짜 선택"></div>
+          <div style="align-self:end;"><button class="btn danger" id="deleteDateBtn" style="width:100%;">이 날짜 전체 삭제</button></div>
+        </div>
+        <div id="deleteDateMsg"></div>
+      </div>
+
     </div>
   </section>
 </main>
@@ -750,6 +785,8 @@ async function tryMasterLogin() {
     document.getElementById('masterPanel').style.display = 'block';
     loadMasterStatus();
     initUnlockDatePicker();
+    initImportDatePicker();
+    initDeleteDatePicker();
   } else {
     msg.className = 'msg err'; msg.textContent = '비밀번호가 올바르지 않습니다.';
     masterPin = '';
@@ -824,6 +861,178 @@ document.getElementById('removeDeptBtn').addEventListener('click', async () => {
     await loadDepartmentsList();
     loadEntryTable(entryPicker.selectedDates[0] ? entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') : todayStr);
   } else { msg.className='msg err'; msg.textContent = res.error; }
+});
+
+/* ---------- 엑셀로 과거 데이터 가져오기 (마스터 전용) ---------- */
+let importDatePicker;
+function initImportDatePicker() {
+  if (importDatePicker) return;
+  importDatePicker = flatpickr('#importDate', { locale: 'ko', maxDate: todayStr, defaultDate: todayStr });
+}
+
+/**
+ * 엑셀 원본 서식(부서/구분/조회/미조회 4항목/계/합계/작성자)을 파싱합니다.
+ * 구분(B열)이 '오전' 또는 '오후'인 행만 데이터로 인식하고, 그 직전에 나온 부서명을 사용합니다.
+ * (제목/헤더 행 개수가 파일마다 달라도 이 방식이면 안전하게 데이터 행만 골라냅니다.)
+ */
+function parseExcelRows(aoa) {
+  const result = [];
+  let currentDept = null;
+  for (let i = 0; i < aoa.length; i++) {
+    const row = aoa[i] || [];
+    const col0 = row[0], col1 = row[1];
+    if (col0 && typeof col0 === 'string' && col0.trim() && col0.trim() !== '진료과' && col0.trim() !== '부서') {
+      currentDept = col0.trim().replace(/\n/g, '');
+    }
+    if (col1 === '오전' || col1 === '오후') {
+      if (!currentDept) continue;
+      result.push({
+        dept: currentDept, ampm: col1,
+        joh: Number(row[2]) || 0, mjCert: Number(row[3]) || 0, mjPw: Number(row[4]) || 0,
+        mjRefuse: Number(row[5]) || 0, mjEtc: Number(row[6]) || 0,
+        writer: row[9] != null ? String(row[9]).trim() : ''
+      });
+    }
+  }
+  return result;
+}
+
+let importPendingDate = null;
+
+document.getElementById('importParseBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('importMsg');
+  const fileInput = document.getElementById('importFile');
+  const date = importDatePicker.selectedDates[0] ? importDatePicker.formatDate(importDatePicker.selectedDates[0], 'Y-m-d') : null;
+  if (!date) { msg.className = 'msg err'; msg.textContent = '먼저 날짜를 선택하세요.'; return; }
+  if (!fileInput.files.length) { msg.className = 'msg err'; msg.textContent = '엑셀 파일을 선택하세요.'; return; }
+
+  msg.className = 'msg'; msg.style.background = '#eef2f8'; msg.textContent = '파일 읽는 중...';
+  const file = fileInput.files[0];
+  const buf = await file.arrayBuffer();
+  let wb;
+  try {
+    wb = XLSX.read(buf, { type: 'array' });
+  } catch (e) {
+    msg.className = 'msg err'; msg.textContent = '엑셀 파일을 읽지 못했습니다: ' + e;
+    return;
+  }
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+  const parsed = parseExcelRows(aoa);
+  if (!parsed.length) {
+    msg.className = 'msg err'; msg.textContent = '엑셀에서 데이터 행을 찾지 못했습니다. 서식이 원본과 같은지 확인해주세요.';
+    return;
+  }
+
+  // 기존 데이터와 비교
+  const existingRes = await callApi('getDayEntries', { date });
+  const existingMap = {};
+  if (existingRes.ok) {
+    existingRes.rows.forEach(r => { existingMap[r.dept + '|' + r.ampm] = r; });
+  }
+
+  importPendingDate = date;
+  const tbody = document.getElementById('importPreviewBody');
+  tbody.innerHTML = '';
+  const fieldDefs = [
+    { key: 'joh', existKey: 'joh' },
+    { key: 'mjCert', existKey: 'mj_cert' },
+    { key: 'mjPw', existKey: 'mj_pw' },
+    { key: 'mjRefuse', existKey: 'mj_refuse' },
+    { key: 'mjEtc', existKey: 'mj_etc' }
+  ];
+  parsed.forEach((row, i) => {
+    const key = row.dept + '|' + row.ampm;
+    const existing = existingMap[key];
+    const existingTotal = existing ? Number(existing.total) || 0 : 0;
+    const excelTotal = row.joh + row.mjCert + row.mjPw + row.mjRefuse + row.mjEtc;
+    let status, checked = true, statusColor = '';
+    let anyFieldDiff = false;
+
+    const fieldCells = fieldDefs.map(f => {
+      const oldV = existing ? (Number(existing[f.existKey]) || 0) : null;
+      const newV = row[f.key];
+      if (oldV === null) return `<td>${newV}</td>`; // 신규
+      if (oldV !== newV) { anyFieldDiff = true; return `<td style="color:var(--red);font-weight:700;">${oldV}→${newV}</td>`; }
+      return `<td>${newV}</td>`;
+    }).join('');
+
+    if (!existing || existingTotal === 0) { status = '신규'; statusColor = 'var(--green)'; }
+    else if (!anyFieldDiff) { status = '동일'; checked = false; statusColor = 'var(--muted)'; }
+    else { status = '⚠️ 값이 다름'; statusColor = 'var(--red)'; }
+
+    const totalCell = existing && existingTotal !== excelTotal
+      ? `<td style="color:var(--red);font-weight:700;">${existingTotal}→${excelTotal}</td>`
+      : `<td>${excelTotal}</td>`;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><input type="checkbox" data-idx="${i}" ${checked ? 'checked' : ''}></td>
+      <td>${row.dept}</td><td>${row.ampm}</td>
+      ${fieldCells}${totalCell}
+      <td style="color:${statusColor};font-weight:600;">${status}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('importPreviewWrap').style.display = 'block';
+  document.getElementById('importPreviewTable').dataset.parsed = JSON.stringify(parsed);
+  msg.className = 'msg ok'; msg.textContent = `${parsed.length}개 항목을 읽었습니다. 아래에서 반영할 항목을 확인하세요 (기본: 신규/값이 다른 항목만 체크됨).`;
+});
+
+document.getElementById('importConfirmBtn').addEventListener('click', async () => {
+  const table = document.getElementById('importPreviewTable');
+  const parsed = JSON.parse(table.dataset.parsed || '[]');
+  const checked = Array.from(table.querySelectorAll('input[type=checkbox]:checked')).map(cb => parsed[Number(cb.dataset.idx)]);
+  const msg = document.getElementById('importMsg');
+  if (!checked.length) { msg.className = 'msg err'; msg.textContent = '체크된 항목이 없습니다.'; return; }
+
+  msg.className = 'msg'; msg.style.background = '#eef2f8'; msg.textContent = '반영하는 중...';
+  const res = await callApi('masterImportRows', { password: masterPw, date: importPendingDate, entries: checked });
+  if (res.ok) {
+    msg.className = 'msg ok'; msg.textContent = `✅ ${res.imported}건 반영 완료 (${importPendingDate})`;
+    document.getElementById('importPreviewWrap').style.display = 'none';
+    document.getElementById('importFile').value = '';
+  } else {
+    msg.className = 'msg err'; msg.textContent = '오류: ' + res.error;
+  }
+});
+
+/* ---------- 해당 날짜 전체 삭제 (2단계 확인) ---------- */
+let deleteDatePicker;
+function initDeleteDatePicker() {
+  if (deleteDatePicker) return;
+  deleteDatePicker = flatpickr('#deleteDate', { locale: 'ko', maxDate: todayStr });
+}
+
+let deleteArmed = false;
+let deleteArmTimer = null;
+document.getElementById('deleteDateBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('deleteDateBtn');
+  const msg = document.getElementById('deleteDateMsg');
+  const date = deleteDatePicker.selectedDates[0] ? deleteDatePicker.formatDate(deleteDatePicker.selectedDates[0], 'Y-m-d') : '';
+  if (!date) { msg.className = 'msg err'; msg.textContent = '삭제할 날짜를 선택하세요.'; return; }
+
+  if (!deleteArmed) {
+    deleteArmed = true;
+    btn.textContent = `정말요? 다시 누르면 ${date} 전체 삭제됩니다`;
+    clearTimeout(deleteArmTimer);
+    deleteArmTimer = setTimeout(() => { deleteArmed = false; btn.textContent = '이 날짜 전체 삭제'; }, 4000);
+    return;
+  }
+
+  deleteArmed = false;
+  clearTimeout(deleteArmTimer);
+  btn.textContent = '이 날짜 전체 삭제';
+  btn.disabled = true;
+  msg.className = 'msg'; msg.style.background = '#eef2f8'; msg.textContent = '삭제 중...';
+  const res = await callApi('masterDeleteDate', { password: masterPw, date });
+  btn.disabled = false;
+  if (res.ok) {
+    msg.className = 'msg ok'; msg.textContent = `${date} 데이터 ${res.deleted}건 삭제 완료`;
+    if (entryPicker.selectedDates[0] && entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') === date) {
+      loadEntryTable(date);
+    }
+  } else {
+    msg.className = 'msg err'; msg.textContent = '오류: ' + res.error;
+  }
 });
 
 /* ---------- 초기화 ---------- */
