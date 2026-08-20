@@ -93,7 +93,13 @@
   #entryTable td.joh-sum{background:#e3f5ea !important;color:var(--green);}
   #entryTable td.miss-sum{background:#fdecee !important;color:var(--red);}
   #entryTable td.last-saved{font-size:11.5px;color:var(--muted);}
-  #entryTable td:last-child{white-space:nowrap;}
+  #entryTable td:last-child, #entryTable th:last-child{
+    white-space:nowrap; position:sticky; right:0; z-index:1;
+    background:var(--card); border-left:2px solid var(--line); text-align:center;
+  }
+  #entryTable thead th:last-child{background:var(--navy);z-index:3;}
+  #entryTable tbody tr:nth-child(even) td:last-child{background:#f7f9fc;}
+  #entryTable tbody tr:hover td:last-child{background:#eaf1fb;}
   #entryTable button[data-role=rowSaveBtn]{white-space:nowrap;min-width:52px;border-radius:7px;}
 
   #masterLoginBox{max-width:320px;margin:40px auto;text-align:center;}
@@ -156,8 +162,8 @@
           <thead>
             <tr>
               <th rowspan="2">부서</th>
-              <th colspan="6" class="am-head">오전</th>
-              <th colspan="6" class="pm-head">오후</th>
+              <th colspan="5" class="am-head">오전</th>
+              <th colspan="5" class="pm-head">오후</th>
               <th rowspan="2">조회<br>합계</th>
               <th rowspan="2">미조회<br>합계</th>
               <th rowspan="2">작성자</th>
@@ -165,12 +171,12 @@
               <th rowspan="2" class="no-print">저장</th>
             </tr>
             <tr>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>계</th>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>계</th>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>계</th>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>계</th>
             </tr>
           </thead>
           <tbody id="entryTbody">
-            <tr><td colspan="18">불러오는 중...</td></tr>
+            <tr><td colspan="16">불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -386,9 +392,9 @@ function latestOf(a, b) {
 async function loadEntryTable(date) {
   date = date || todayStr;
   const tbody = document.getElementById('entryTbody');
-  tbody.innerHTML = '<tr><td colspan="18">불러오는 중...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="16">불러오는 중...</td></tr>';
   const res = await callApi('getDayEntries', { date });
-  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="18" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
+  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="16" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
 
   const badge = document.getElementById('entryDateBadge');
   badge.textContent = res.isPast ? '과거 날짜 – 잠긴 항목은 마스터 잠금 해제 필요' : '오늘 – 자유롭게 수정 가능';
@@ -434,17 +440,16 @@ async function loadEntryTable(date) {
 }
 
 function ampmCells(dept, ampm, entry) {
-  const e = entry || { joh:0, mj_cert:0, mj_pw:0, mj_refuse:0, mj_etc:0, locked:false };
+  const e = entry || { joh:0, mj_cert:0, mj_pw:0, mj_refuse:0, locked:false };
   const locked = e.locked;
   const dis = locked ? 'disabled title="마감됨 - 마스터 잠금 해제 필요"' : '';
-  const total = (Number(e.joh)||0)+(Number(e.mj_cert)||0)+(Number(e.mj_pw)||0)+(Number(e.mj_refuse)||0)+(Number(e.mj_etc)||0);
+  const total = (Number(e.joh)||0)+(Number(e.mj_cert)||0)+(Number(e.mj_pw)||0)+(Number(e.mj_refuse)||0);
   const d = `data-dept="${dept}" data-ampm="${ampm}" data-updated="${(e.updatedAt||'').toString().replace(/"/g,'&quot;')}"`;
   return `
     <td ${d}><input type="number" min="0" data-role="field" data-f="joh" value="${e.joh||0}" ${dis} style="width:52px;"></td>
     <td ${d}><input type="number" min="0" data-role="field" data-f="mjCert" value="${e.mj_cert||0}" ${dis} style="width:52px;"></td>
     <td ${d}><input type="number" min="0" data-role="field" data-f="mjPw" value="${e.mj_pw||0}" ${dis} style="width:52px;"></td>
     <td ${d}><input type="number" min="0" data-role="field" data-f="mjRefuse" value="${e.mj_refuse||0}" ${dis} style="width:52px;"></td>
-    <td ${d}><input type="number" min="0" data-role="field" data-f="mjEtc" value="${e.mj_etc||0}" ${dis} style="width:52px;"></td>
     <td ${d} class="total-cell" style="font-weight:700;">${total}</td>
   `;
 }
@@ -494,7 +499,7 @@ function collectEntryPayload(tr) {
     const johInput = tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f=joh]`);
     if (!johInput || johInput.disabled) return; // 잠긴 항목은 제외
     const get = f => Number(tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f="${f}"]`)?.value) || 0;
-    rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: get('mjEtc'), writer: writerInput ? writerInput.value : '' });
+    rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: 0, writer: writerInput ? writerInput.value : '' });
   });
   return rows;
 }
