@@ -167,8 +167,8 @@
           <thead>
             <tr>
               <th rowspan="2">부서</th>
-              <th colspan="5" class="am-head">오전</th>
-              <th colspan="5" class="pm-head">오후</th>
+              <th colspan="6" class="am-head">오전</th>
+              <th colspan="6" class="pm-head">오후</th>
               <th rowspan="2">조회<br>합계</th>
               <th rowspan="2">미조회<br>합계</th>
               <th rowspan="2">작성자</th>
@@ -176,12 +176,12 @@
               <th rowspan="2" class="no-print">저장</th>
             </tr>
             <tr>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>계</th>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>계</th>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>카톡미사용</th><th>계</th>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>카톡미사용</th><th>계</th>
             </tr>
           </thead>
           <tbody id="entryTbody">
-            <tr><td colspan="16">불러오는 중...</td></tr>
+            <tr><td colspan="17">불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -202,9 +202,9 @@
       <h2 id="summaryTitle">심평원 내가 먹는약 한눈에 서비스 안내 현황</h2>
       <table class="heat" id="summaryTable">
         <thead>
-          <tr><th>부서</th><th>구분</th><th>조회</th><th>인증서無</th><th>비밀번호분실</th><th>안내거부</th><th>기타</th><th>계</th><th>합계</th><th>작성자</th></tr>
+          <tr><th>부서</th><th>구분</th><th>조회</th><th>인증서無</th><th>비밀번호분실</th><th>안내거부</th><th>기타</th><th>카톡미사용</th><th>계</th><th>합계</th><th>작성자</th></tr>
         </thead>
-        <tbody id="summaryTbody"><tr><td colspan="10">불러오는 중...</td></tr></tbody>
+        <tbody id="summaryTbody"><tr><td colspan="11">불러오는 중...</td></tr></tbody>
       </table>
     </div>
   </section>
@@ -290,7 +290,7 @@
           <table class="heat" id="importPreviewTable">
             <thead><tr>
               <th></th><th>부서</th><th>시간대</th>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>계</th>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>카톡미사용</th><th>계</th>
               <th>상태</th>
             </tr></thead>
             <tbody id="importPreviewBody"></tbody>
@@ -431,9 +431,9 @@ function latestOf(a, b) {
 async function loadEntryTable(date) {
   date = date || todayStr;
   const tbody = document.getElementById('entryTbody');
-  tbody.innerHTML = '<tr><td colspan="16">불러오는 중...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="17">불러오는 중...</td></tr>';
   const res = await callApi('getDayEntries', { date });
-  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="16" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
+  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="17" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
 
   const badge = document.getElementById('entryDateBadge');
   badge.textContent = res.isPast ? '과거 날짜 – 잠긴 항목은 마스터 잠금 해제 필요' : '오늘 – 자유롭게 수정 가능';
@@ -479,16 +479,17 @@ async function loadEntryTable(date) {
 }
 
 function ampmCells(dept, ampm, entry) {
-  const e = entry || { joh:0, mj_cert:0, mj_pw:0, mj_refuse:0, locked:false };
+  const e = entry || { joh:0, mj_cert:0, mj_pw:0, mj_refuse:0, mj_kakao:0, locked:false };
   const locked = e.locked;
   const dis = locked ? 'disabled title="마감됨 - 마스터 잠금 해제 필요"' : '';
-  const total = (Number(e.joh)||0)+(Number(e.mj_cert)||0)+(Number(e.mj_pw)||0)+(Number(e.mj_refuse)||0);
+  const total = (Number(e.joh)||0)+(Number(e.mj_cert)||0)+(Number(e.mj_pw)||0)+(Number(e.mj_refuse)||0)+(Number(e.mj_kakao)||0);
   const d = `data-dept="${dept}" data-ampm="${ampm}" data-updated="${(e.updatedAt||'').toString().replace(/"/g,'&quot;')}"`;
   return `
     <td ${d}><input type="number" min="0" data-role="field" data-f="joh" value="${e.joh||0}" ${dis} style="width:52px;"></td>
     <td ${d}><input type="number" min="0" data-role="field" data-f="mjCert" value="${e.mj_cert||0}" ${dis} style="width:52px;"></td>
     <td ${d}><input type="number" min="0" data-role="field" data-f="mjPw" value="${e.mj_pw||0}" ${dis} style="width:52px;"></td>
     <td ${d}><input type="number" min="0" data-role="field" data-f="mjRefuse" value="${e.mj_refuse||0}" ${dis} style="width:52px;"></td>
+    <td ${d}><input type="number" min="0" data-role="field" data-f="mjKakao" value="${e.mj_kakao||0}" ${dis} style="width:52px;"></td>
     <td ${d} class="total-cell" style="font-weight:700;">${total}</td>
   `;
 }
@@ -538,7 +539,7 @@ function collectEntryPayload(tr) {
     const johInput = tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f=joh]`);
     if (!johInput || johInput.disabled) return; // 잠긴 항목은 제외
     const get = f => Number(tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f="${f}"]`)?.value) || 0;
-    rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: 0, writer: writerInput ? writerInput.value : '' });
+    rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: 0, mjKakao: get('mjKakao'), writer: writerInput ? writerInput.value : '' });
   });
   return rows;
 }
@@ -597,15 +598,15 @@ async function loadSummaryView() {
 async function loadSummaryTable(date) {
   date = date || todayStr;
   const tbody = document.getElementById('summaryTbody');
-  tbody.innerHTML = '<tr><td colspan="10">불러오는 중...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="11">불러오는 중...</td></tr>';
   const res = await callApi('getDayEntries', { date });
-  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="10" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
+  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="11" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
   document.getElementById('summaryTitle').textContent = `심평원 내가 먹는약 한눈에 서비스 안내 현황 (${date})`;
 
   const byDept = {};
   res.rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
 
-  const colSum = { joh:0, cert:0, pw:0, refuse:0, etc:0, total:0, grand:0 };
+  const colSum = { joh:0, cert:0, pw:0, refuse:0, etc:0, kakao:0, total:0, grand:0 };
   let html = '';
   Object.keys(byDept).forEach(dept => {
     const am = byDept[dept]['오전'] || {}, pm = byDept[dept]['오후'] || {};
@@ -620,6 +621,7 @@ async function loadSummaryTable(date) {
     colSum.pw += (Number(am.mj_pw)||0)+(Number(pm.mj_pw)||0);
     colSum.refuse += (Number(am.mj_refuse)||0)+(Number(pm.mj_refuse)||0);
     colSum.etc += (Number(am.mj_etc)||0)+(Number(pm.mj_etc)||0);
+    colSum.kakao += (Number(am.mj_kakao)||0)+(Number(pm.mj_kakao)||0);
     colSum.total += grandTotal;
     colSum.grand += grandTotal;
 
@@ -627,7 +629,7 @@ async function loadSummaryTable(date) {
       const e = byDept[dept][ampm] || {};
       html += '<tr>';
       if (idx === 0) html += `<td rowspan="2" style="font-weight:600;">${dept}</td>`;
-      html += `<td>${ampm}</td><td>${e.joh||0}</td><td>${e.mj_cert||0}</td><td>${e.mj_pw||0}</td><td>${e.mj_refuse||0}</td><td>${e.mj_etc||0}</td><td>${e.total||0}</td>`;
+      html += `<td>${ampm}</td><td>${e.joh||0}</td><td>${e.mj_cert||0}</td><td>${e.mj_pw||0}</td><td>${e.mj_refuse||0}</td><td>${e.mj_etc||0}</td><td>${e.mj_kakao||0}</td><td>${e.total||0}</td>`;
       if (idx === 0) {
         html += `<td rowspan="2" style="font-weight:700;">${grandTotal}</td>`;
         html += `<td rowspan="2">${writerCombined}</td>`;
@@ -637,10 +639,10 @@ async function loadSummaryTable(date) {
   });
   html += `<tr style="background:#eef2f8;font-weight:800;">
       <td colspan="2">합계</td>
-      <td>${colSum.joh}</td><td>${colSum.cert}</td><td>${colSum.pw}</td><td>${colSum.refuse}</td><td>${colSum.etc}</td><td>${colSum.total}</td>
+      <td>${colSum.joh}</td><td>${colSum.cert}</td><td>${colSum.pw}</td><td>${colSum.refuse}</td><td>${colSum.etc}</td><td>${colSum.kakao}</td><td>${colSum.total}</td>
       <td>${colSum.grand}</td><td></td>
     </tr>`;
-  tbody.innerHTML = html || '<tr><td colspan="10">데이터가 없습니다.</td></tr>';
+  tbody.innerHTML = html || '<tr><td colspan="11">데이터가 없습니다.</td></tr>';
 }
 
 document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
@@ -893,7 +895,7 @@ function parseExcelRows(aoa) {
       result.push({
         dept: currentDept, ampm: col1,
         joh: Number(row[2]) || 0, mjCert: Number(row[3]) || 0, mjPw: Number(row[4]) || 0,
-        mjRefuse: Number(row[5]) || 0, mjEtc: Number(row[6]) || 0,
+        mjRefuse: Number(row[5]) || 0, mjEtc: Number(row[6]) || 0, mjKakao: 0, // 원본 엑셀엔 카톡미사용 컬럼이 없어 0으로 처리
         writer: row[9] != null ? String(row[9]).trim() : ''
       });
     }
@@ -943,13 +945,14 @@ document.getElementById('importParseBtn').addEventListener('click', async () => 
     { key: 'mjCert', existKey: 'mj_cert' },
     { key: 'mjPw', existKey: 'mj_pw' },
     { key: 'mjRefuse', existKey: 'mj_refuse' },
-    { key: 'mjEtc', existKey: 'mj_etc' }
+    { key: 'mjEtc', existKey: 'mj_etc' },
+    { key: 'mjKakao', existKey: 'mj_kakao' }
   ];
   parsed.forEach((row, i) => {
     const key = row.dept + '|' + row.ampm;
     const existing = existingMap[key];
     const existingTotal = existing ? Number(existing.total) || 0 : 0;
-    const excelTotal = row.joh + row.mjCert + row.mjPw + row.mjRefuse + row.mjEtc;
+    const excelTotal = row.joh + row.mjCert + row.mjPw + row.mjRefuse + row.mjEtc + row.mjKakao;
     let status, checked = true, statusColor = '';
     let anyFieldDiff = false;
 
