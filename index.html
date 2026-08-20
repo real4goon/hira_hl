@@ -64,6 +64,12 @@
   .status-item .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
   .dot.green{background:var(--green);} .dot.red{background:var(--red);} .dot.amber{background:var(--amber);}
   #masterLoginBox{max-width:320px;margin:40px auto;text-align:center;}
+  #siteGate{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:100;}
+  #siteGate .box{background:#fff;border-radius:12px;padding:32px;max-width:320px;width:90%;text-align:center;}
+  #siteGate h2{color:var(--navy);margin-top:0;}
+  #siteGate input{margin-top:10px;}
+  #siteGate button{margin-top:12px;width:100%;}
+  #siteGate .err{color:var(--red);font-size:13px;margin-top:8px;}
   @media print{
     header, nav, .no-print{display:none !important;}
     body{background:#fff;}
@@ -72,6 +78,16 @@
 </style>
 </head>
 <body>
+
+<div id="siteGate">
+  <div class="box">
+    <h2>내가먹는약 안내 현황</h2>
+    <p style="color:var(--muted);font-size:14px;">접속 비밀번호를 입력하세요</p>
+    <input type="password" id="siteGatePw" placeholder="비밀번호">
+    <button class="btn" id="siteGateBtn">입장</button>
+    <div class="err" id="siteGateErr"></div>
+  </div>
+</div>
 
 <header class="no-print">
   <h1>심평원 내가먹는약 안내 현황</h1>
@@ -253,6 +269,26 @@ document.querySelectorAll('nav button').forEach(btn => {
     if (btn.dataset.view === 'summary') loadSummaryView();
   });
 });
+
+/* ---------- 사이트 접속 비밀번호 게이트 ---------- */
+const SITE_PW = "4114"; // 사이트 접속 비밀번호 (마스터 관리자 비밀번호와 별개)
+function checkSiteGate() {
+  if (localStorage.getItem('siteUnlocked') === '1') {
+    document.getElementById('siteGate').style.display = 'none';
+  }
+}
+document.getElementById('siteGateBtn').addEventListener('click', trySiteGate);
+document.getElementById('siteGatePw').addEventListener('keydown', e => { if (e.key === 'Enter') trySiteGate(); });
+function trySiteGate() {
+  const val = document.getElementById('siteGatePw').value;
+  if (val === SITE_PW) {
+    localStorage.setItem('siteUnlocked', '1');
+    document.getElementById('siteGate').style.display = 'none';
+  } else {
+    document.getElementById('siteGateErr').textContent = '비밀번호가 올바르지 않습니다.';
+  }
+}
+checkSiteGate();
 
 const todayStr = new Date().toISOString().slice(0,10);
 
