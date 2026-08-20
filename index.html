@@ -77,43 +77,70 @@
   <h1>심평원 내가먹는약 안내 현황</h1>
   <nav>
     <button data-view="entry" class="active">부서 입력</button>
+    <button data-view="summary">종합</button>
     <button data-view="stats">통계</button>
     <button data-view="master">마스터</button>
   </nav>
 </header>
 
 <main>
-  <!-- ===== 1) 부서 입력 화면 ===== -->
+  <!-- ===== 1) 부서 입력 화면 (v2: 전체 부서 표 방식) ===== -->
   <section id="view-entry" class="view active">
+    <div id="configWarning" class="card" style="display:none;border-color:#d6455d;background:#fdeaec;">
+      <b>⚠️ 설정 필요:</b> index.html의 <code>SCRIPT_URL</code>이 아직 Apps Script 배포 URL로 교체되지 않았습니다. 화면이 비어있거나 저장이 안 되는 건 대부분 이 설정 때문입니다.
+    </div>
     <div class="card">
-      <h2 id="todayDateLabel">오늘 날짜</h2>
-      <div class="field">
-        <label>부서 선택</label>
-        <select id="deptSelect"><option value="">부서를 선택하세요</option></select>
+      <div class="stat-toolbar">
+        <div>
+          <label>조회할 날짜</label>
+          <input type="text" id="entryDate" placeholder="날짜 선택">
+        </div>
+        <div id="entryDateBadge" style="margin-left:auto;font-size:13px;color:var(--muted);"></div>
       </div>
-      <div id="deptNameDisplay" class="dept-name-display"></div>
-
-      <div class="ampm-toggle">
-        <button id="btnAm" data-ampm="오전" class="active">오전</button>
-        <button id="btnPm" data-ampm="오후">오후</button>
+      <div style="overflow-x:auto;">
+        <table class="heat" id="entryTable">
+          <thead>
+            <tr>
+              <th rowspan="2">부서</th>
+              <th colspan="7">오전</th>
+              <th colspan="7">오후</th>
+            </tr>
+            <tr>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>계</th><th>작성자</th>
+              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>계</th><th>작성자</th>
+            </tr>
+          </thead>
+          <tbody id="entryTbody">
+            <tr><td colspan="15">불러오는 중...</td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <div class="grid2">
-        <div class="field"><label>조회</label><input type="number" id="f_joh" min="0" value="0"></div>
-        <div class="field"><label>미조회 - 인증서 無</label><input type="number" id="f_cert" min="0" value="0"></div>
-        <div class="field"><label>미조회 - 비밀번호 분실</label><input type="number" id="f_pw" min="0" value="0"></div>
-        <div class="field"><label>미조회 - 안내 거부</label><input type="number" id="f_refuse" min="0" value="0"></div>
-        <div class="field"><label>미조회 - 기타</label><input type="number" id="f_etc" min="0" value="0"></div>
-        <div class="field"><label>작성자</label><input type="text" id="f_writer" placeholder="이름 입력"></div>
-      </div>
-      <div class="total-box">계: <span id="totalDisplay">0</span> 건</div>
-
-      <button class="btn" id="submitBtn" style="width:100%;">저장</button>
+      <button class="btn" id="submitAllBtn" style="width:100%;margin-top:14px;">전체 저장</button>
       <div id="entryMsg"></div>
     </div>
   </section>
 
-  <!-- ===== 2) 통계/대시보드 화면 ===== -->
+  <!-- ===== 2) 종합 화면 (엑셀 원본 레이아웃, 읽기전용, 인쇄용) ===== -->
+  <section id="view-summary" class="view">
+    <div class="card">
+      <div class="stat-toolbar">
+        <div>
+          <label>조회 날짜</label>
+          <input type="text" id="summaryDate" placeholder="날짜 선택">
+        </div>
+        <button class="btn secondary no-print" id="summaryPrintBtn" style="margin-left:auto;">인쇄 / PDF</button>
+      </div>
+      <h2 id="summaryTitle">심평원 내가 먹는약 한눈에 서비스 안내 현황</h2>
+      <table class="heat" id="summaryTable">
+        <thead>
+          <tr><th>부서</th><th>구분</th><th>조회</th><th>인증서無</th><th>비밀번호분실</th><th>안내거부</th><th>기타</th><th>계</th><th>합계</th><th>작성자</th></tr>
+        </thead>
+        <tbody id="summaryTbody"><tr><td colspan="10">불러오는 중...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 3) 통계/대시보드 화면 ===== -->
   <section id="view-stats" class="view">
     <div class="card">
       <div class="stat-toolbar">
@@ -200,15 +227,19 @@
    ⚠️ 배포 전 필수 설정: Apps Script 웹앱 배포 후 발급되는 URL을 아래에 입력하세요.
    예) const SCRIPT_URL = "https://script.google.com/macros/s/AKfyc.../exec";
 ========================================================= */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdIB9hSTnNAdLoxNlf9bkigbnKcwRxgoWTVP2NC9UcSGamfBoH1AOuzzSIESBdEFbr/exec";
+const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
 async function callApi(action, payload) {
-  const res = await fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight 회피
-    body: JSON.stringify({ action, ...payload })
-  });
-  return res.json();
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight 회피
+      body: JSON.stringify({ action, ...payload })
+    });
+    return await res.json();
+  } catch (err) {
+    return { ok: false, error: 'API 연결 실패 (SCRIPT_URL 설정을 확인하세요): ' + err };
+  }
 }
 
 /* ---------- 공통: 탭 전환 ---------- */
@@ -219,121 +250,190 @@ document.querySelectorAll('nav button').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
     if (btn.dataset.view === 'stats') loadStatsView();
+    if (btn.dataset.view === 'summary') loadSummaryView();
   });
 });
 
 const todayStr = new Date().toISOString().slice(0,10);
-document.getElementById('todayDateLabel').textContent = todayStr + ' 입력';
 
-/* ---------- 1) 부서 입력 화면 ---------- */
-let currentAmpm = '오전';
+if (SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
+  document.getElementById('configWarning').style.display = 'block';
+}
+
+/* ---------- 1) 부서 입력 화면 (v2: 전체 부서 표) ---------- */
 let departments = [];
+let entryPicker;
 
-async function initEntryView() {
+async function loadDepartmentsList() {
   const res = await callApi('getDepartments', {});
-  if (res.ok) {
-    departments = res.departments;
-    const sel = document.getElementById('deptSelect');
-    departments.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d; opt.textContent = d;
-      sel.appendChild(opt);
-    });
-    const last = localStorage.getItem('lastDept');
-    if (last && departments.includes(last)) {
-      sel.value = last;
-      onDeptChange();
-    }
-  }
-  // 마스터 화면 select 도 채워두기
+  if (res.ok) departments = res.departments;
   populateMasterDeptSelects();
 }
 
-document.getElementById('deptSelect').addEventListener('change', onDeptChange);
-function onDeptChange() {
-  const val = document.getElementById('deptSelect').value;
-  document.getElementById('deptNameDisplay').textContent = val;
-  if (val) { localStorage.setItem('lastDept', val); loadTodayEntry(); }
-}
-
-[document.getElementById('btnAm'), document.getElementById('btnPm')].forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.getElementById('btnAm').classList.remove('active');
-    document.getElementById('btnPm').classList.remove('active');
-    btn.classList.add('active');
-    currentAmpm = btn.dataset.ampm;
-    loadTodayEntry();
+function initEntryDatePicker() {
+  entryPicker = flatpickr('#entryDate', {
+    locale: 'ko',
+    defaultDate: todayStr,
+    maxDate: todayStr,
+    onChange: (sel, dateStr) => loadEntryTable(dateStr)
   });
-});
-
-['f_joh','f_cert','f_pw','f_refuse','f_etc'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updateTotal);
-});
-function updateTotal() {
-  const vals = ['f_joh','f_cert','f_pw','f_refuse','f_etc'].map(id => Number(document.getElementById(id).value) || 0);
-  document.getElementById('totalDisplay').textContent = vals.reduce((a,b)=>a+b,0);
 }
 
-async function loadTodayEntry() {
-  const dept = document.getElementById('deptSelect').value;
-  if (!dept) return;
-  const res = await callApi('getTodayEntry', { dept, ampm: currentAmpm });
-  const msg = document.getElementById('entryMsg');
-  if (res.ok && res.entry) {
-    const e = res.entry;
-    document.getElementById('f_joh').value = e.joh;
-    document.getElementById('f_cert').value = e.mj_cert;
-    document.getElementById('f_pw').value = e.mj_pw;
-    document.getElementById('f_refuse').value = e.mj_refuse;
-    document.getElementById('f_etc').value = e.mj_etc;
-    document.getElementById('f_writer').value = e.writer;
-    updateTotal();
-    msg.className = 'msg ok';
-    msg.textContent = '오늘 이미 입력하신 내역입니다. 수정 후 다시 저장하면 갱신됩니다.';
-  } else {
-    ['f_joh','f_cert','f_pw','f_refuse','f_etc'].forEach(id => document.getElementById(id).value = 0);
-    document.getElementById('f_writer').value = '';
-    updateTotal();
-    msg.textContent = '';
-  }
+async function loadEntryTable(date) {
+  date = date || todayStr;
+  const tbody = document.getElementById('entryTbody');
+  tbody.innerHTML = '<tr><td colspan="15">불러오는 중...</td></tr>';
+  const res = await callApi('getDayEntries', { date });
+  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="15" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
+
+  const badge = document.getElementById('entryDateBadge');
+  badge.textContent = res.isPast ? '과거 날짜 – 잠긴 항목은 마스터 잠금 해제 필요' : '오늘 – 자유롭게 수정 가능';
+
+  const byDept = {};
+  res.rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
+
+  tbody.innerHTML = '';
+  Object.keys(byDept).forEach(dept => {
+    const am = byDept[dept]['오전'], pm = byDept[dept]['오후'];
+    const tr = document.createElement('tr');
+    tr.dataset.dept = dept;
+    tr.innerHTML = `<td style="font-weight:600;">${dept}</td>` + ampmCells(dept, '오전', am) + ampmCells(dept, '오후', pm);
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('input[data-role=field]').forEach(inp => {
+    inp.addEventListener('input', () => recalcRowTotal(inp));
+  });
 }
 
-document.getElementById('submitBtn').addEventListener('click', () => {
-  const dept = document.getElementById('deptSelect').value;
-  if (!dept) { alert('부서를 선택하세요.'); return; }
-  const total = document.getElementById('totalDisplay').textContent;
-  document.getElementById('confirmText').textContent = `${dept} ${currentAmpm} 입력 – 계 ${total}건 맞습니까?`;
+function ampmCells(dept, ampm, entry) {
+  const e = entry || { joh:0, mj_cert:0, mj_pw:0, mj_refuse:0, mj_etc:0, writer:'', locked:false };
+  const locked = e.locked;
+  const dis = locked ? 'disabled title="마감됨 - 마스터 잠금 해제 필요"' : '';
+  const total = (Number(e.joh)||0)+(Number(e.mj_cert)||0)+(Number(e.mj_pw)||0)+(Number(e.mj_refuse)||0)+(Number(e.mj_etc)||0);
+  const d = `data-dept="${dept}" data-ampm="${ampm}"`;
+  return `
+    <td ${d}><input type="number" min="0" data-role="field" data-f="joh" value="${e.joh||0}" ${dis} style="width:52px;"></td>
+    <td ${d}><input type="number" min="0" data-role="field" data-f="mjCert" value="${e.mj_cert||0}" ${dis} style="width:52px;"></td>
+    <td ${d}><input type="number" min="0" data-role="field" data-f="mjPw" value="${e.mj_pw||0}" ${dis} style="width:52px;"></td>
+    <td ${d}><input type="number" min="0" data-role="field" data-f="mjRefuse" value="${e.mj_refuse||0}" ${dis} style="width:52px;"></td>
+    <td ${d}><input type="number" min="0" data-role="field" data-f="mjEtc" value="${e.mj_etc||0}" ${dis} style="width:52px;"></td>
+    <td ${d} class="total-cell" style="font-weight:700;">${total}</td>
+    <td ${d}><input type="text" data-role="writer" value="${e.writer||''}" ${dis} style="width:70px;"></td>
+  `;
+}
+
+function updateBlockTotal(row) {
+  ['오전','오후'].forEach(ampm => {
+    const dept = row.dataset.dept;
+    const cells = row.querySelectorAll(`td[data-dept="${dept}"][data-ampm="${ampm}"]`);
+    let sum = 0, totalCell = null;
+    cells.forEach(td => {
+      const inp = td.querySelector('input[data-role=field]');
+      if (inp) sum += Number(inp.value) || 0;
+      if (td.classList.contains('total-cell')) totalCell = td;
+    });
+    if (totalCell) totalCell.textContent = sum;
+  });
+}
+function recalcRowTotal(inp) {
+  const row = inp.closest('tr');
+  if (row) updateBlockTotal(row);
+}
+
+document.getElementById('submitAllBtn').addEventListener('click', () => {
+  const rows = collectEntryPayload();
+  if (!rows.length) { alert('저장할 항목이 없습니다 (모두 마감되었거나 표가 비어있습니다).'); return; }
+  document.getElementById('confirmText').textContent = `총 ${rows.length}개 부서·시간대 항목을 저장하시겠습니까?`;
   document.getElementById('confirmModal').classList.add('active');
+  document.getElementById('confirmModal').dataset.pendingRows = JSON.stringify(rows);
 });
+
+function collectEntryPayload() {
+  const rows = [];
+  document.querySelectorAll('#entryTbody tr').forEach(tr => {
+    const dept = tr.dataset.dept;
+    ['오전','오후'].forEach(ampm => {
+      const cells = tr.querySelectorAll(`td[data-dept="${dept}"][data-ampm="${ampm}"]`);
+      const johInput = tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f=joh]`);
+      if (!johInput || johInput.disabled) return; // 잠긴 항목은 제외
+      const get = f => Number(tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f="${f}"]`)?.value) || 0;
+      const writer = tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-role=writer]`)?.value || '';
+      rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: get('mjEtc'), writer });
+    });
+  });
+  return rows;
+}
+
 document.getElementById('confirmCancel').addEventListener('click', () => {
   document.getElementById('confirmModal').classList.remove('active');
 });
 document.getElementById('confirmOk').addEventListener('click', async () => {
-  document.getElementById('confirmModal').classList.remove('active');
-  const payload = {
-    date: todayStr,
-    dept: document.getElementById('deptSelect').value,
-    ampm: currentAmpm,
-    joh: document.getElementById('f_joh').value,
-    mjCert: document.getElementById('f_cert').value,
-    mjPw: document.getElementById('f_pw').value,
-    mjRefuse: document.getElementById('f_refuse').value,
-    mjEtc: document.getElementById('f_etc').value,
-    writer: document.getElementById('f_writer').value
-  };
+  const modal = document.getElementById('confirmModal');
+  const rows = JSON.parse(modal.dataset.pendingRows || '[]');
+  modal.classList.remove('active');
+  const date = entryPicker.selectedDates[0] ? entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') : todayStr;
   const msg = document.getElementById('entryMsg');
   msg.className = 'msg'; msg.textContent = '저장 중...';
-  document.getElementById('submitBtn').disabled = true;
-  const res = await callApi('submitEntry', payload);
-  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitAllBtn').disabled = true;
+  const res = await callApi('submitBatch', { date, entries: rows });
+  document.getElementById('submitAllBtn').disabled = false;
   if (res.ok) {
-    msg.className = 'msg ok'; msg.textContent = '저장되었습니다.';
+    msg.className = 'msg ok';
+    msg.textContent = `저장 완료 (${res.saved}건)` + (res.skipped && res.skipped.length ? ` / 마감되어 건너뜀: ${res.skipped.join(', ')}` : '');
+    loadEntryTable(date);
   } else {
     msg.className = 'msg err'; msg.textContent = '오류: ' + res.error;
   }
 });
 
-/* ---------- 2) 통계 화면 ---------- */
+/* ---------- 2) 종합 화면 (엑셀 원본 레이아웃, 읽기전용) ---------- */
+let summaryPicker;
+
+function initSummaryPicker() {
+  summaryPicker = flatpickr('#summaryDate', {
+    locale: 'ko',
+    defaultDate: todayStr,
+    onChange: (sel, dateStr) => loadSummaryTable(dateStr)
+  });
+}
+
+async function loadSummaryView() {
+  if (!summaryPicker) initSummaryPicker();
+  loadSummaryTable(todayStr);
+}
+
+async function loadSummaryTable(date) {
+  date = date || todayStr;
+  const tbody = document.getElementById('summaryTbody');
+  tbody.innerHTML = '<tr><td colspan="10">불러오는 중...</td></tr>';
+  const res = await callApi('getDayEntries', { date });
+  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="10" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
+  document.getElementById('summaryTitle').textContent = `심평원 내가 먹는약 한눈에 서비스 안내 현황 (${date})`;
+
+  const byDept = {};
+  res.rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
+
+  let html = '';
+  Object.keys(byDept).forEach(dept => {
+    const am = byDept[dept]['오전'] || {}, pm = byDept[dept]['오후'] || {};
+    const grandTotal = (Number(am.total)||0) + (Number(pm.total)||0);
+    ['오전','오후'].forEach((ampm, idx) => {
+      const e = byDept[dept][ampm] || {};
+      html += '<tr>';
+      if (idx === 0) html += `<td rowspan="2" style="font-weight:600;">${dept}</td>`;
+      html += `<td>${ampm}</td><td>${e.joh||0}</td><td>${e.mj_cert||0}</td><td>${e.mj_pw||0}</td><td>${e.mj_refuse||0}</td><td>${e.mj_etc||0}</td><td>${e.total||0}</td>`;
+      if (idx === 0) html += `<td rowspan="2" style="font-weight:700;">${grandTotal}</td>`;
+      html += `<td>${e.writer||''}</td>`;
+      html += '</tr>';
+    });
+  });
+  tbody.innerHTML = html || '<tr><td colspan="10">데이터가 없습니다.</td></tr>';
+}
+
+document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
+
+
 let statPicker;
 let statsCache = [];
 let charts = {};
@@ -357,6 +457,8 @@ async function loadStatsView() {
     renderAmPmChart();
     renderWeekdayChart();
     renderMonthlyChart();
+  } else {
+    document.getElementById('heatTableWrap').innerHTML = `<p style="color:#d6455d;">오류: ${res.error}</p>`;
   }
 }
 
@@ -509,9 +611,10 @@ document.getElementById('addDeptBtn').addEventListener('click', async () => {
   if (!name) return;
   const res = await callApi('masterAddDept', { password: masterPw, deptName: name });
   if (res.ok) {
-    msg.className='msg ok'; msg.textContent = '부서가 추가되었습니다. 새로고침 후 반영됩니다.';
+    msg.className='msg ok'; msg.textContent = '부서가 추가되었습니다.';
     document.getElementById('newDeptName').value = '';
-    await initEntryView();
+    await loadDepartmentsList();
+    loadEntryTable(entryPicker.selectedDates[0] ? entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') : todayStr);
   } else { msg.className='msg err'; msg.textContent = res.error; }
 });
 
@@ -521,13 +624,15 @@ document.getElementById('removeDeptBtn').addEventListener('click', async () => {
   const res = await callApi('masterRemoveDept', { password: masterPw, deptName: name });
   if (res.ok) {
     msg.className='msg ok'; msg.textContent = '부서가 삭제(사용중지)되었습니다.';
-    await initEntryView();
+    await loadDepartmentsList();
+    loadEntryTable(entryPicker.selectedDates[0] ? entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') : todayStr);
   } else { msg.className='msg err'; msg.textContent = res.error; }
 });
 
 /* ---------- 초기화 ---------- */
-initEntryView();
-updateTotal();
+loadDepartmentsList();
+initEntryDatePicker();
+loadEntryTable(todayStr);
 </script>
 </body>
 </html>
