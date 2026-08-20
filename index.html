@@ -456,9 +456,8 @@ function collectEntryPayload() {
       if (!anyTouched && !writerTouched) return; // 이 블록은 안 건드렸으면 아예 전송하지 않음
       const johInput = tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f=joh]`);
       if (!johInput || johInput.disabled) return; // 잠긴 항목은 제외
-      const baseline = tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"]`)?.dataset.updated || '';
       const get = f => Number(tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f="${f}"]`)?.value) || 0;
-      rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: get('mjEtc'), writer: writerInput ? writerInput.value : '', baselineUpdatedAt: baseline });
+      rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: get('mjEtc'), writer: writerInput ? writerInput.value : '' });
     });
   });
   return rows;
@@ -480,20 +479,11 @@ document.getElementById('confirmOk').addEventListener('click', async () => {
   if (res.ok) {
     const parts = [];
     if (res.saved > 0) parts.push(`저장 완료 (${res.saved}건)`);
-    let hasIssue = false;
-    if (res.skipped && res.skipped.length) {
-      parts.push(`※ 마감된 날짜라 반영 안 된 항목이 있어요: ${res.skipped.map(s=>s.dept+' '+s.ampm).join(', ')} (관리자에게 잠금 해제 요청)`);
-      hasIssue = true;
-    }
-    if (res.conflicted && res.conflicted.length) {
-      parts.push(`※ 방금 다른 분이 먼저 입력하신 내용이 있어서, 해당 항목은 최신 값으로 화면을 자동 갱신했어요: ${res.conflicted.map(s=>s.dept+' '+s.ampm).join(', ')} — 아래 표에서 확인 후 필요하면 다시 입력해주세요.`);
-      hasIssue = true;
-    }
+    if (res.skipped && res.skipped.length) parts.push(`※ 마감된 날짜라 반영 안 된 항목이 있어요: ${res.skipped.map(s=>s.dept+' '+s.ampm).join(', ')} (관리자에게 잠금 해제 요청)`);
     if (!parts.length) parts.push('변경사항이 없습니다.');
-    msg.className = hasIssue ? 'msg' : 'msg ok';
-    if (hasIssue) msg.style.background = '#fff7e6';
+    msg.className = 'msg ok';
     msg.textContent = parts.join(' ');
-    loadEntryTable(date); // 항상 자동으로 최신 데이터를 다시 불러옴 (사용자가 따로 할 일 없음)
+    loadEntryTable(date);
   } else {
     msg.className = 'msg err'; msg.textContent = '오류: ' + res.error;
   }
