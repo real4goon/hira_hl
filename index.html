@@ -3,455 +3,532 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>타병원 인프라 비교 v3.7</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>내가먹는약 안내 현황</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ko.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root{
-    --ink:#14213D; --ink-soft:#3A4A63;
-    --paper:#F4F6F5; --panel:#FFFFFF;
-    --accent:#2A6F6F; --accent-soft:#E4EFEE;
-    --brick:#C4432B; --brick-soft:#F6E7E2;
-    --gold:#B8863E; --gold-soft:#F3EBDB;
-    --line:#DBE1DE; --line-soft:#EAEEEC;
+    --navy:#1b3a5c; --navy-light:#2e5484; --bg:#f4f6f9; --card:#ffffff;
+    --line:#e2e6ec; --text:#232a33; --muted:#6b7684; --green:#2e9e5b; --red:#d6455d; --amber:#e0a129;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0; background:var(--paper); color:var(--ink);
-    font-family:'Pretendard',-apple-system,sans-serif;
+  body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--text);}
+  header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  header h1{font-size:17px;margin:0;font-weight:700;}
+  nav{display:flex;gap:6px;}
+  nav button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px;}
+  nav button.active{background:#fff;color:var(--navy);font-weight:700;border-color:#fff;}
+  main{max-width:1100px;margin:0 auto;padding:18px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;}
+  .card h2{font-size:15px;margin:0 0 12px;color:var(--navy);}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;}
+  select, input[type=number], input[type=text], input[type=password]{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-size:14px;background:#fff;
   }
-  .app{display:flex;min-height:100vh;}
-
-  /* ---------- 좌측 사이드바 ---------- */
-  .sidebar{
-    width:280px; flex-shrink:0; background:var(--ink); color:#fff;
-    padding:22px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;
-  }
-  .sidebar .eyebrow{font-size:11px;letter-spacing:.14em;color:#8FD3C9;font-weight:600;}
-  .versionbadge{
-    display:inline-block;background:var(--brick);color:#fff;font-size:12px;font-weight:800;
-    padding:3px 10px;border-radius:20px;margin:6px 0 4px;letter-spacing:.03em;
-  }
-  .sidebar h1{font-family:'Noto Serif KR',serif;font-size:19px;margin:4px 0 16px;}
-  .sidebar input[type=text]{
-    width:100%;border:none;border-radius:8px;padding:9px 11px;font-size:13px;
-    font-family:inherit;margin-bottom:10px;background:rgba(255,255,255,.1);color:#fff;
-  }
-  .sidebar input[type=text]::placeholder{color:rgba(255,255,255,.5);}
-  .selrow{display:flex;gap:6px;margin-bottom:12px;}
-  .selrow button{
-    flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
-    color:#fff;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit;
-  }
-  .region-title{font-size:10.5px;letter-spacing:.08em;color:rgba(255,255,255,.45);font-weight:700;margin:14px 0 4px;text-transform:uppercase;}
-  .hitem{
-    display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:12.5px;cursor:pointer;
-    border-radius:6px;
-  }
-  .hitem:hover{background:rgba(255,255,255,.06);}
-  .hitem input{accent-color:#8FD3C9;width:14px;height:14px;flex-shrink:0;}
-  .hitem.hidden{display:none;}
-  .hitem .mine{color:#F6B375;font-weight:700;}
-
-  .keybox{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15);}
-  .keybox label{font-size:11px;color:rgba(255,255,255,.6);display:block;margin-bottom:6px;}
-  .keybox .krow{display:flex;gap:6px;}
-  .keybox input{flex:1;}
-  .keybox .clr{background:var(--brick);border:none;color:#fff;border-radius:6px;padding:0 10px;font-size:11px;cursor:pointer;}
-
-  .runbtn{
-    width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;
-    padding:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:14px;
-  }
-  .runbtn:disabled{background:rgba(255,255,255,.15);}
-
-  /* ---------- 메인 ---------- */
-  .main{flex:1;padding:32px 28px 80px;min-width:0;}
-  .main .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:6px;}
-  .main h2{font-family:'Noto Serif KR',serif;font-size:20px;margin:0;}
-  .main .src{font-size:11px;color:var(--ink-soft);}
-  .status{font-size:13px;color:var(--ink-soft);margin:10px 0 18px;min-height:18px;}
-  .status.error{color:var(--brick);}
-  .progress-track{background:var(--line-soft);border-radius:6px;height:8px;overflow:hidden;margin-bottom:18px;display:none;}
-  .progress-fill{height:100%;background:var(--accent);width:0%;transition:width .2s;}
-
-  .results{display:none;flex-direction:column;gap:14px;}
-  .metric-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
-  .metric-card .mhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
-  .metric-card .mtitle{font-weight:700;font-size:14px;}
-  .metric-card .munit{font-size:11px;color:var(--ink-soft);}
-  .bar-row{display:grid;grid-template-columns:130px 1fr 54px;align-items:center;gap:10px;padding:5px 0;font-size:12.5px;}
-  .bar-row .name{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .bar-row .name.me{color:var(--brick);font-weight:700;}
-  .bar-track{background:var(--line-soft);border-radius:5px;height:14px;overflow:hidden;}
-  .bar-fill{height:100%;background:var(--accent);border-radius:5px 0 0 5px;transition:width .4s ease;}
-  .bar-fill.me{background:var(--brick);}
-  .bar-fill.rank1{background:var(--gold);}
-  .bar-row .val{text-align:right;font-weight:700;font-size:12px;}
-
-  .grade-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line-soft);font-size:12.5px;}
-  .grade-row:last-child{border-bottom:none;}
-  .grade-badge{background:var(--gold-soft);color:var(--gold);font-weight:800;font-size:12.5px;padding:2px 11px;border-radius:20px;min-width:34px;text-align:center;}
-
-  .exportbtn{background:#217346;color:#fff;border:none;border-radius:8px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;display:none;}
-  .empty-hint{text-align:center;color:#9AA3A0;font-size:14px;padding:60px 20px;border:2px dashed var(--line);border-radius:12px;}
-
-  @media (max-width: 820px){
-    .app{flex-direction:column;}
-    .sidebar{width:100%;height:auto;position:relative;max-height:60vh;}
-    .main{padding:20px 14px 60px;}
+  .dept-name-display{font-size:22px;font-weight:800;color:var(--navy);text-align:center;padding:10px 0;}
+  .ampm-toggle{display:flex;gap:8px;margin-bottom:14px;}
+  .ampm-toggle button{flex:1;padding:10px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;font-size:14px;}
+  .ampm-toggle button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .field{margin-bottom:10px;}
+  .total-box{background:#eef2f8;border-radius:8px;padding:10px;text-align:center;font-size:15px;font-weight:700;color:var(--navy);margin:10px 0;}
+  .btn{background:var(--navy);color:#fff;border:none;padding:11px 18px;border-radius:6px;font-size:14px;cursor:pointer;font-weight:600;}
+  .btn:hover{background:var(--navy-light);}
+  .btn.secondary{background:#fff;color:var(--navy);border:1px solid var(--navy);}
+  .btn.danger{background:var(--red);}
+  .msg{font-size:13px;margin-top:8px;padding:8px;border-radius:6px;}
+  .msg.ok{background:#e7f7ee;color:var(--green);}
+  .msg.err{background:#fdeaec;color:var(--red);}
+  /* modal */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:50;}
+  .modal-bg.active{display:flex;}
+  .modal{background:#fff;border-radius:10px;padding:24px;max-width:360px;width:90%;text-align:center;}
+  .modal p{font-size:15px;line-height:1.5;}
+  .modal .row{display:flex;gap:10px;margin-top:16px;}
+  .modal .row button{flex:1;padding:10px;border-radius:6px;border:none;cursor:pointer;font-size:14px;}
+  /* 통계 */
+  .stat-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+  table.heat{width:100%;border-collapse:collapse;font-size:13px;}
+  table.heat th,table.heat td{border:1px solid var(--line);padding:6px 8px;text-align:center;}
+  table.heat th{background:#f0f3f7;}
+  canvas{max-height:300px;}
+  .chart-wrap{margin-top:14px;}
+  /* 마스터 */
+  .status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+  .status-item{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;}
+  .status-item .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
+  .dot.green{background:var(--green);} .dot.red{background:var(--red);} .dot.amber{background:var(--amber);}
+  #masterLoginBox{max-width:320px;margin:40px auto;text-align:center;}
+  @media print{
+    header, nav, .no-print{display:none !important;}
+    body{background:#fff;}
+    .card{border:none;box-shadow:none;}
   }
 </style>
 </head>
 <body>
-<div class="app">
 
-  <div class="sidebar">
-    <div class="eyebrow">HIRA OPEN API</div>
-    <div class="versionbadge" id="versionBadge">v3.7</div>
-    <h1>상급종합병원 47</h1>
+<header class="no-print">
+  <h1>심평원 내가먹는약 안내 현황</h1>
+  <nav>
+    <button data-view="entry" class="active">부서 입력</button>
+    <button data-view="stats">통계</button>
+    <button data-view="master">마스터</button>
+  </nav>
+</header>
 
-    <div class="keybox" style="border-top:none;margin-top:0;padding-top:0;">
-      <label>① 서버 연결 상태</label>
-      <div style="background:rgba(255,255,255,.08);border-radius:8px;padding:9px 11px;font-size:12px;color:#8FD3C9;">
-        ✅ Apps Script 프록시 연결됨 (인증키 서버에 보관중)
+<main>
+  <!-- ===== 1) 부서 입력 화면 ===== -->
+  <section id="view-entry" class="view active">
+    <div class="card">
+      <h2 id="todayDateLabel">오늘 날짜</h2>
+      <div class="field">
+        <label>부서 선택</label>
+        <select id="deptSelect"><option value="">부서를 선택하세요</option></select>
+      </div>
+      <div id="deptNameDisplay" class="dept-name-display"></div>
+
+      <div class="ampm-toggle">
+        <button id="btnAm" data-ampm="오전" class="active">오전</button>
+        <button id="btnPm" data-ampm="오후">오후</button>
+      </div>
+
+      <div class="grid2">
+        <div class="field"><label>조회</label><input type="number" id="f_joh" min="0" value="0"></div>
+        <div class="field"><label>미조회 - 인증서 無</label><input type="number" id="f_cert" min="0" value="0"></div>
+        <div class="field"><label>미조회 - 비밀번호 분실</label><input type="number" id="f_pw" min="0" value="0"></div>
+        <div class="field"><label>미조회 - 안내 거부</label><input type="number" id="f_refuse" min="0" value="0"></div>
+        <div class="field"><label>미조회 - 기타</label><input type="number" id="f_etc" min="0" value="0"></div>
+        <div class="field"><label>작성자</label><input type="text" id="f_writer" placeholder="이름 입력"></div>
+      </div>
+      <div class="total-box">계: <span id="totalDisplay">0</span> 건</div>
+
+      <button class="btn" id="submitBtn" style="width:100%;">저장</button>
+      <div id="entryMsg"></div>
+    </div>
+  </section>
+
+  <!-- ===== 2) 통계/대시보드 화면 ===== -->
+  <section id="view-stats" class="view">
+    <div class="card">
+      <div class="stat-toolbar">
+        <div>
+          <label>조회 날짜</label>
+          <input type="text" id="statDate" placeholder="날짜 선택">
+        </div>
+        <button class="btn secondary no-print" id="printBtn" style="margin-left:auto;">인쇄 / PDF</button>
+      </div>
+      <h2>부서별 현황 (선택일)</h2>
+      <div id="heatTableWrap">데이터를 불러오는 중...</div>
+    </div>
+
+    <div class="card">
+      <h2>시간대별 비교 (오전 vs 오후, 선택일)</h2>
+      <div class="chart-wrap"><canvas id="chartAmPm"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>요일별 분석 (최근 8주 평균 미조회율)</h2>
+      <div class="chart-wrap"><canvas id="chartWeekday"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>월별 통계 (최근 6개월)</h2>
+      <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ===== 3) 마스터 화면 ===== -->
+  <section id="view-master" class="view">
+    <div id="masterLoginBox" class="card">
+      <h2>마스터 로그인</h2>
+      <input type="password" id="masterPw" placeholder="비밀번호">
+      <button class="btn" id="masterLoginBtn" style="width:100%;margin-top:10px;">로그인</button>
+      <div id="masterLoginMsg"></div>
+    </div>
+
+    <div id="masterPanel" style="display:none;">
+      <div class="card">
+        <h2>오늘 부서별 입력 현황</h2>
+        <div class="status-grid" id="statusGrid"></div>
+      </div>
+
+      <div class="card">
+        <h2>잠금 해제 (마감된 날짜 수정 허용)</h2>
+        <div class="grid2">
+          <div class="field"><label>날짜</label><input type="text" id="unlockDate" placeholder="YYYY-MM-DD"></div>
+          <div class="field"><label>부서</label><select id="unlockDept"></select></div>
+        </div>
+        <button class="btn secondary" id="unlockBtn">잠금 해제</button>
+        <div id="unlockMsg"></div>
+      </div>
+
+      <div class="card">
+        <h2>부서 목록 관리</h2>
+        <div class="grid2">
+          <div class="field"><label>부서 추가</label><input type="text" id="newDeptName" placeholder="새 부서명"></div>
+          <div style="align-self:end;"><button class="btn secondary" id="addDeptBtn" style="width:100%;">추가</button></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>부서 삭제(사용중지)</label><select id="removeDeptSelect"></select></div>
+          <div style="align-self:end;"><button class="btn danger" id="removeDeptBtn" style="width:100%;">삭제</button></div>
+        </div>
+        <div id="deptMgmtMsg"></div>
       </div>
     </div>
-    <button class="runbtn" id="runBtn" onclick="runCompare()">② 선택 병원 비교 시작</button>
-    <button class="runbtn" style="background:transparent;border:1px solid rgba(255,255,255,.25);margin-top:6px;font-size:11px;padding:8px;" onclick="clearCache()">저장된 캐시 지우기</button>
+  </section>
+</main>
 
-    <div style="margin:18px 0 8px;font-size:11px;color:rgba(255,255,255,.5);">③ 비교할 병원 선택</div>
-    <input type="text" id="filterInput" placeholder="병원명 검색…" oninput="filterList()">
-    <div class="selrow">
-      <button onclick="selectAll(true)">전체선택</button>
-      <button onclick="selectAll(false)">전체해제</button>
+<!-- 제출 확인 모달 -->
+<div class="modal-bg" id="confirmModal">
+  <div class="modal">
+    <p id="confirmText"></p>
+    <div class="row">
+      <button class="secondary" id="confirmCancel" style="background:#eee;">취소</button>
+      <button id="confirmOk" style="background:var(--navy);color:#fff;">확인</button>
     </div>
-    <div id="hospListBox"></div>
   </div>
-
-  <div class="main">
-    <div class="top">
-      <h2>인프라 비교 결과 <span style="font-family:'Pretendard';font-size:13px;background:var(--brick-soft);color:var(--brick);padding:3px 10px;border-radius:20px;vertical-align:middle;">v3.7</span></h2>
-      <div class="src">병원정보서비스 · 의료기관별상세정보서비스</div>
-    </div>
-    <div class="status" id="status"></div>
-    <div class="progress-track" id="progTrack"><div class="progress-fill" id="progFill"></div></div>
-
-    <div id="emptyHint" class="empty-hint">왼쪽에서 병원을 선택하고 [비교 시작]을 눌러주세요.<br>동시에 최대 6곳씩 병렬로 조회해 빠르게 수집합니다.</div>
-    <div class="results" id="results"></div>
-    <button class="exportbtn" id="exportBtn" onclick="exportExcel()">📊 엑셀로 다운로드</button>
-  </div>
-
 </div>
 
 <script>
-// Apps Script 프록시 주소 (인증키는 여기 서버 속성에 보관되어 코드에 노출되지 않음)
-const PROXY_URL = "https://script.google.com/macros/s/AKfycbyhyoMXpqhexIxlhkUv64ucPmP8-N2AMl5sb4zrj3-m6Ufdh3tYjxWLhW0JMvslOcFVdQ/exec";
+/* =========================================================
+   ⚠️ 배포 전 필수 설정: Apps Script 웹앱 배포 후 발급되는 URL을 아래에 입력하세요.
+   예) const SCRIPT_URL = "https://script.google.com/macros/s/AKfyc.../exec";
+========================================================= */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdIB9hSTnNAdLoxNlf9bkigbnKcwRxgoWTVP2NC9UcSGamfBoH1AOuzzSIESBdEFbr/exec
+";
 
-// 제5기(2024~2026) 상급종합병원 47개소 — 표시명: [검색용 병원명, 지역]
-const HOSPITALS = [
-  ["한림대학교성심병원","경기남부권"],
-  ["강북삼성병원","서울권"],["건국대학교병원","서울권"],["경희대학교병원","서울권"],
-  ["고려대학교구로병원","서울권"],["삼성서울병원","서울권"],["서울대학교병원","서울권"],
-  ["강남세브란스병원","서울권"],["세브란스병원","서울권"],["이화여자대학교부속목동병원","서울권"],
-  ["서울아산병원","서울권"],["중앙대학교병원","서울권"],["고려대학교안암병원","서울권"],
-  ["가톨릭대학교서울성모병원","서울권"],["한양대학교병원","서울권"],
-  ["가톨릭대학교인천성모병원","경기서북부권"],["가천대학교길병원","경기서북부권"],
-  ["인하대학교병원","경기서북부권"],["순천향대학교부속부천병원","경기서북부권"],
-  ["가톨릭대학교성빈센트병원","경기남부권"],["고려대학교안산병원","경기남부권"],
-  ["분당서울대학교병원","경기남부권"],["아주대학교병원","경기남부권"],
-  ["강릉아산병원","강원권"],["연세대학교원주세브란스기독병원","강원권"],
-  ["충북대학교병원","충청권"],["건양대학교병원","충청권"],["충남대학교병원","충청권"],
-  ["단국대학교병원","충청권"],
-  ["원광대학교병원","호남제주권"],["전북대학교병원","호남제주권"],
-  ["전남대학교병원","호남제주권"],["조선대학교병원","호남제주권"],["화순전남대학교병원","호남제주권"],
-  ["경북대학교병원","영남권"],["계명대학교동산병원","영남권"],["대구가톨릭대학교병원","영남권"],
-  ["영남대학교병원","영남권"],["칠곡경북대학교병원","영남권"],
-  ["고신대학교복음병원","영남권"],["동아대학교병원","영남권"],["부산대학교병원","영남권"],
-  ["양산부산대학교병원","영남권"],["인제대학교부산백병원","영남권"],["울산대학교병원","영남권"],
-  ["경상국립대학교병원","영남권"],["성균관대학교삼성창원병원","영남권"],
-];
-
-const BASIS_PATH = "B551182/hospInfoServicev2/getHospBasisList";
-const DETAIL_BASE_PATH = "B551182/MadmDtlInfoService2.8";
-const CONCURRENCY = 2; // 동시에 몇 개 병원씩 처리할지 (Apps Script 동시 요청 제한 고려)
-
-// ---- 로컬 캐시 (localStorage) ----
-// 참고: Claude 채팅 미리보기 화면에서는 브라우저 저장소가 비활성화되어 있어
-// 이 기능이 동작하지 않습니다. GitHub Pages에 올리거나 파일로 저장해 여신 뒤에만 정상 작동합니다.
-function saveCache(data){
-  try{
-    localStorage.setItem(`infra_${data.name}`, JSON.stringify({ ...data, ts: new Date().toISOString() }));
-  }catch(e){ /* 저장소 접근 불가 - 조용히 무시 */ }
-}
-function loadCache(name){
-  try{
-    const raw = localStorage.getItem(`infra_${name}`);
-    return raw ? JSON.parse(raw) : null;
-  }catch(e){ return null; }
-}
-function clearCache(){
-  try{
-    HOSPITALS.forEach(([name])=> localStorage.removeItem(`infra_${name}`));
-    statusMsg("저장된 캐시를 모두 지웠습니다.");
-  }catch(e){ statusMsg("이 화면에서는 캐시 저장소를 사용할 수 없습니다.", true); }
+async function callApi(action, payload) {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight 회피
+    body: JSON.stringify({ action, ...payload })
+  });
+  return res.json();
 }
 
-let selected = new Set(["한림대학교성심병원","서울대학교병원","삼성서울병원","서울아산병원"]);
-let collected = [];
+/* ---------- 공통: 탭 전환 ---------- */
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    if (btn.dataset.view === 'stats') loadStatsView();
+  });
+});
 
-function renderList(){
-  const box = document.getElementById("hospListBox");
-  box.innerHTML = "";
-  let lastRegion = "";
-  HOSPITALS.forEach(([name, region])=>{
-    if(region !== lastRegion){
-      const rt = document.createElement("div");
-      rt.className = "region-title";
-      rt.textContent = region;
-      box.appendChild(rt);
-      lastRegion = region;
+const todayStr = new Date().toISOString().slice(0,10);
+document.getElementById('todayDateLabel').textContent = todayStr + ' 입력';
+
+/* ---------- 1) 부서 입력 화면 ---------- */
+let currentAmpm = '오전';
+let departments = [];
+
+async function initEntryView() {
+  const res = await callApi('getDepartments', {});
+  if (res.ok) {
+    departments = res.departments;
+    const sel = document.getElementById('deptSelect');
+    departments.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      sel.appendChild(opt);
+    });
+    const last = localStorage.getItem('lastDept');
+    if (last && departments.includes(last)) {
+      sel.value = last;
+      onDeptChange();
     }
-    const row = document.createElement("label");
-    row.className = "hitem";
-    row.dataset.name = name;
-    const isMine = name.includes("한림");
-    const cached = loadCache(name);
-    const cacheTag = cached ? `<span style="margin-left:auto;font-size:9.5px;color:#8FD3C9;">●</span>` : "";
-    row.innerHTML = `<input type="checkbox" ${selected.has(name)?"checked":""}
-      onchange="toggleHosp('${name}', this.checked)">
-      <span class="${isMine?'mine':''}">${name}</span>${cacheTag}`;
-    box.appendChild(row);
-  });
-}
-function toggleHosp(name, on){ on ? selected.add(name) : selected.delete(name); }
-function selectAll(on){
-  document.querySelectorAll('#hospListBox input[type=checkbox]').forEach(cb=>{
-    if(cb.closest('.hitem').classList.contains('hidden')) return;
-    cb.checked = on;
-    toggleHosp(cb.closest('.hitem').dataset.name, on);
-  });
-}
-function filterList(){
-  const q = document.getElementById("filterInput").value.trim();
-  document.querySelectorAll('#hospListBox .hitem').forEach(el=>{
-    el.classList.toggle("hidden", q && !el.dataset.name.includes(q));
-  });
-  document.querySelectorAll('#hospListBox .region-title').forEach(el=>{
-    // 지역명 아래 항목이 전부 숨겨지면 지역명도 숨김
-    let next = el.nextElementSibling, anyVisible = false;
-    while(next && !next.classList.contains('region-title')){
-      if(!next.classList.contains('hidden')) anyVisible = true;
-      next = next.nextElementSibling;
-    }
-    el.style.display = anyVisible ? "" : "none";
-  });
-}
-renderList();
-
-// 페이지 로드시: 선택된 병원 중 캐시된 데이터가 있으면 자동 복원
-(function restoreFromCache(){
-  const cachedList = [...selected].map(loadCache).filter(Boolean);
-  if(cachedList.length > 0){
-    collected = cachedList;
-    document.getElementById("emptyHint").style.display = "none";
-    renderResults(cachedList);
-    document.getElementById("exportBtn").style.display = "inline-block";
-    statusMsg(`캐시에서 ${cachedList.length}개 병원 데이터를 불러왔습니다. (이 미리보기 화면에서는 새로고침 시 사라집니다)`);
   }
-})();
-
-function statusMsg(t, err){
-  const el = document.getElementById("status");
-  el.textContent = t;
-  el.className = "status" + (err?" error":"");
+  // 마스터 화면 select 도 채워두기
+  populateMasterDeptSelects();
 }
 
-async function callApi(path, params){
-  const qs = new URLSearchParams(Object.assign({ path: path, pageNo:1, numOfRows:100 }, params));
-  const res = await fetch(PROXY_URL + "?" + qs.toString(), { signal: AbortSignal.timeout(15000) });
-  if(!res.ok) throw new Error("프록시 응답 오류 (" + res.status + ")");
-  return await res.json();
+document.getElementById('deptSelect').addEventListener('change', onDeptChange);
+function onDeptChange() {
+  const val = document.getElementById('deptSelect').value;
+  document.getElementById('deptNameDisplay').textContent = val;
+  if (val) { localStorage.setItem('lastDept', val); loadTodayEntry(); }
 }
-function items(json){
-  try{
-    const body = json.response && json.response.body;
-    const it = body && body.items && body.items.item;
-    if(!it) return [];
-    return Array.isArray(it) ? it : [it];
-  }catch(e){ return []; }
+
+[document.getElementById('btnAm'), document.getElementById('btnPm')].forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('btnAm').classList.remove('active');
+    document.getElementById('btnPm').classList.remove('active');
+    btn.classList.add('active');
+    currentAmpm = btn.dataset.ampm;
+    loadTodayEntry();
+  });
+});
+
+['f_joh','f_cert','f_pw','f_refuse','f_etc'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateTotal);
+});
+function updateTotal() {
+  const vals = ['f_joh','f_cert','f_pw','f_refuse','f_etc'].map(id => Number(document.getElementById(id).value) || 0);
+  document.getElementById('totalDisplay').textContent = vals.reduce((a,b)=>a+b,0);
 }
-const num = v => Number(v) || 0;
 
-async function fetchHospital(name){
-  const basis = await callApi(BASIS_PATH, { yadmNm: name });
-  const bi = items(basis)[0];
-  if(!bi) return { name, error: "검색 결과 없음" };
+async function loadTodayEntry() {
+  const dept = document.getElementById('deptSelect').value;
+  if (!dept) return;
+  const res = await callApi('getTodayEntry', { dept, ampm: currentAmpm });
+  const msg = document.getElementById('entryMsg');
+  if (res.ok && res.entry) {
+    const e = res.entry;
+    document.getElementById('f_joh').value = e.joh;
+    document.getElementById('f_cert').value = e.mj_cert;
+    document.getElementById('f_pw').value = e.mj_pw;
+    document.getElementById('f_refuse').value = e.mj_refuse;
+    document.getElementById('f_etc').value = e.mj_etc;
+    document.getElementById('f_writer').value = e.writer;
+    updateTotal();
+    msg.className = 'msg ok';
+    msg.textContent = '오늘 이미 입력하신 내역입니다. 수정 후 다시 저장하면 갱신됩니다.';
+  } else {
+    ['f_joh','f_cert','f_pw','f_refuse','f_etc'].forEach(id => document.getElementById(id).value = 0);
+    document.getElementById('f_writer').value = '';
+    updateTotal();
+    msg.textContent = '';
+  }
+}
 
-  const ykiho = bi.ykiho;
-  const data = {
-    name: bi.yadmNm || name,
-    drTotCnt: num(bi.drTotCnt),
-    sdrCnt: num(bi.mdeptSdrCnt) + num(bi.detySdrCnt) + num(bi.cmdcSdrCnt),
-    mriCnt:0, ctCnt:0, petCnt:0, sonoCnt:0,
-    nursingGrade:"-", dgsbjtCnt:0, spclDiagCnt:0, etcHstCnt:0,
-    permSbdCnt:0, stdSickbdCnt:0, hghrSickbdCnt:0,
-    trnsprtCnt:0, spclHospCnt:0, foepCnt:0
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const dept = document.getElementById('deptSelect').value;
+  if (!dept) { alert('부서를 선택하세요.'); return; }
+  const total = document.getElementById('totalDisplay').textContent;
+  document.getElementById('confirmText').textContent = `${dept} ${currentAmpm} 입력 – 계 ${total}건 맞습니까?`;
+  document.getElementById('confirmModal').classList.add('active');
+});
+document.getElementById('confirmCancel').addEventListener('click', () => {
+  document.getElementById('confirmModal').classList.remove('active');
+});
+document.getElementById('confirmOk').addEventListener('click', async () => {
+  document.getElementById('confirmModal').classList.remove('active');
+  const payload = {
+    date: todayStr,
+    dept: document.getElementById('deptSelect').value,
+    ampm: currentAmpm,
+    joh: document.getElementById('f_joh').value,
+    mjCert: document.getElementById('f_cert').value,
+    mjPw: document.getElementById('f_pw').value,
+    mjRefuse: document.getElementById('f_refuse').value,
+    mjEtc: document.getElementById('f_etc').value,
+    writer: document.getElementById('f_writer').value
   };
-
-  // 9개 상세정보를 3개씩 3번에 나눠 순차 호출 (Apps Script 동시 요청 제한 대응)
-  const detailCalls = [
-    ["getMedOftInfo2.8"], ["getNursigGrdInfo2.8"], ["getDgsbjtInfo2.8"],
-    ["getSpclDiagInfo2.8"], ["getEtcHstInfo2.8"], ["getDtlInfo2.8"],
-    ["getTrnsprtInfo2.8"], ["getSpclHospAsgFldList2.8"], ["getFoepAddcInfo2.8"],
-  ];
-  const results = [];
-  for(let i=0;i<detailCalls.length;i+=3){
-    const batch = detailCalls.slice(i,i+3).map(([op])=>
-      callApi(DETAIL_BASE_PATH + "/" + op, { ykiho }).catch(()=>({}))
-    );
-    results.push(...await Promise.all(batch));
+  const msg = document.getElementById('entryMsg');
+  msg.className = 'msg'; msg.textContent = '저장 중...';
+  document.getElementById('submitBtn').disabled = true;
+  const res = await callApi('submitEntry', payload);
+  document.getElementById('submitBtn').disabled = false;
+  if (res.ok) {
+    msg.className = 'msg ok'; msg.textContent = '저장되었습니다.';
+  } else {
+    msg.className = 'msg err'; msg.textContent = '오류: ' + res.error;
   }
-  const [eqp, nurs, dgsbjt, spcl, etc, dtl, trnsprt, spclHosp, foep] = results;
+});
 
-  items(eqp).forEach(e=>{
-    const nm = (e.oftCdNm||"").toUpperCase();
-    const c = num(e.oftCnt);
-    if(nm.includes("MRI") || nm.includes("자기공명")) data.mriCnt += c;
-    if(nm.includes("CT") || nm.includes("전산화") || nm.includes("단층")) data.ctCnt += c;
-    if(nm.includes("PET") || nm.includes("양전자")) data.petCnt += c;
-    if(nm.includes("초음파")) data.sonoCnt += c;
+/* ---------- 2) 통계 화면 ---------- */
+let statPicker;
+let statsCache = [];
+let charts = {};
+
+function initStatsPicker() {
+  statPicker = flatpickr('#statDate', {
+    locale: 'ko',
+    defaultDate: todayStr,
+    onChange: () => renderHeatTable()
   });
-  const hi = items(nurs).find(n => String(n.tyCd) === "01");
-  if(hi) data.nursingGrade = String(hi.careGrd);
-  data.dgsbjtCnt = items(dgsbjt).length;
-  data.spclDiagCnt = items(spcl).length;
-  data.etcHstCnt = items(etc).reduce((s,e)=> s + num(e.gnlNopCnt), 0);
-
-  // --- 신규 추가: 세부정보 / 교통정보 / 전문병원지정분야 / 식대가산정보 ---
-  const dtlItem = items(dtl)[0];
-  if(dtlItem){
-    data.permSbdCnt = num(dtlItem.permSbdCnt);
-    data.stdSickbdCnt = num(dtlItem.stdSickbdCnt);
-    data.hghrSickbdCnt = num(dtlItem.hghrSickbdCnt);
-  }
-  data.trnsprtCnt = items(trnsprt).length;
-  data.spclHospCnt = items(spclHosp).length;
-  data.foepCnt = items(foep).length;
-
-  return data;
 }
 
-// 동시에 CONCURRENCY개씩 처리하는 병렬 러너
-async function runPool(list, worker, onProgress){
-  const results = new Array(list.length);
-  let idx = 0, done = 0;
-  async function next(){
-    while(idx < list.length){
-      const my = idx++;
-      try{ results[my] = await worker(list[my]); }
-      catch(e){ results[my] = { name:list[my], error:e.message }; }
-      done++;
-      onProgress(done, list.length);
-    }
+async function loadStatsView() {
+  if (!statPicker) initStatsPicker();
+  const to = todayStr;
+  const from = new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().slice(0,10);
+  const res = await callApi('getStats', { from, to });
+  if (res.ok) {
+    statsCache = res.rows;
+    renderHeatTable();
+    renderAmPmChart();
+    renderWeekdayChart();
+    renderMonthlyChart();
   }
-  await Promise.all(Array.from({length:Math.min(CONCURRENCY,list.length)}, next));
-  return results;
 }
 
-async function runCompare(){
-  const list = [...selected];
-  if(list.length === 0){ statusMsg("병원을 1곳 이상 선택해주세요.", true); return; }
-  const btn = document.getElementById("runBtn");
-  btn.disabled = true;
-  document.getElementById("emptyHint").style.display = "none";
-  document.getElementById("results").style.display = "none";
-  document.getElementById("exportBtn").style.display = "none";
-  document.getElementById("progTrack").style.display = "block";
-  document.getElementById("progFill").style.width = "0%";
-
-  statusMsg(`${list.length}개 병원 동시 수집 중 (최대 ${CONCURRENCY}곳씩 병렬)…`);
-
-  collected = await runPool(list, async (name)=>{
-    const d = await fetchHospital(name);
-    if(!d.error) saveCache(d);
-    return d;
-  }, (done,total)=>{
-    document.getElementById("progFill").style.width = Math.round(done/total*100) + "%";
-    statusMsg(`수집 중… ${done}/${total}`);
+function renderHeatTable() {
+  const sel = statPicker.selectedDates[0] ? statPicker.formatDate(statPicker.selectedDates[0], 'Y-m-d') : todayStr;
+  const rows = statsCache.filter(r => r.date === sel);
+  const byDept = {};
+  rows.forEach(r => {
+    if (!byDept[r.dept]) byDept[r.dept] = {};
+    byDept[r.dept][r.ampm] = r;
   });
-
-  btn.disabled = false;
-  document.getElementById("progTrack").style.display = "none";
-  const ok = collected.filter(d=>!d.error);
-  if(ok.length === 0){ statusMsg("수집된 데이터가 없습니다.", true); document.getElementById("emptyHint").style.display="block"; return; }
-  statusMsg(`${ok.length}개 병원 수집 완료 (실패 ${collected.length-ok.length}개).`);
-  renderResults(ok);
-  document.getElementById("exportBtn").style.display = "inline-block";
+  let html = '<table class="heat"><tr><th>부서</th><th>오전 조회</th><th>오전 미조회</th><th>오후 조회</th><th>오후 미조회</th></tr>';
+  Object.keys(byDept).sort().forEach(dept => {
+    const am = byDept[dept]['오전'], pm = byDept[dept]['오후'];
+    const amMiss = am ? (am.total - am.joh) : '-';
+    const pmMiss = pm ? (pm.total - pm.joh) : '-';
+    html += `<tr><td>${dept}</td><td>${am?am.joh:'-'}</td><td style="color:${amMiss>0?'#d6455d':'inherit'}">${amMiss}</td><td>${pm?pm.joh:'-'}</td><td style="color:${pmMiss>0?'#d6455d':'inherit'}">${pmMiss}</td></tr>`;
+  });
+  html += '</table>';
+  if (Object.keys(byDept).length === 0) html = '<p style="color:#888;">해당 날짜 데이터가 없습니다.</p>';
+  document.getElementById('heatTableWrap').innerHTML = html;
 }
 
-function barCard(title, unit, key, data){
-  const max = Math.max(...data.map(d=>d[key]||0), 1);
-  const sorted = [...data].sort((a,b)=>b[key]-a[key]);
-  let rows = sorted.map((d,i)=>{
-    const pct = Math.round(((d[key]||0)/max)*100);
-    const isMine = d.name.includes("한림");
-    const fillCls = "bar-fill" + (isMine ? " me" : (i===0 ? " rank1" : ""));
-    return `<div class="bar-row">
-      <div class="name${isMine?' me':''}">${d.name}</div>
-      <div class="bar-track"><div class="${fillCls}" style="width:${pct}%"></div></div>
-      <div class="val">${(d[key]||0).toLocaleString()}</div>
-    </div>`;
-  }).join("");
-  return `<div class="metric-card"><div class="mhead"><div class="mtitle">${title}</div><div class="munit">${unit}</div></div>${rows}</div>`;
+function destroyChart(key) { if (charts[key]) charts[key].destroy(); }
+
+function renderAmPmChart() {
+  const sel = statPicker.selectedDates[0] ? statPicker.formatDate(statPicker.selectedDates[0], 'Y-m-d') : todayStr;
+  const rows = statsCache.filter(r => r.date === sel);
+  const amRows = rows.filter(r => r.ampm === '오전');
+  const pmRows = rows.filter(r => r.ampm === '오후');
+  const sum = arr => arr.reduce((s,r)=>s+r.total,0);
+  const sumJoh = arr => arr.reduce((s,r)=>s+r.joh,0);
+  destroyChart('ampm');
+  charts.ampm = new Chart(document.getElementById('chartAmPm'), {
+    type: 'bar',
+    data: {
+      labels: ['오전','오후'],
+      datasets: [
+        { label: '조회', data: [sumJoh(amRows), sumJoh(pmRows)], backgroundColor: '#2e9e5b' },
+        { label: '미조회', data: [sum(amRows)-sumJoh(amRows), sum(pmRows)-sumJoh(pmRows)], backgroundColor: '#d6455d' }
+      ]
+    },
+    options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
+  });
 }
-function gradeCard(data){
-  const rows = data.map(d=>{
-    const g = d.nursingGrade;
-    const show = (g === "-" || g === "undefined") ? "정보없음" : (isNaN(g) ? g : g + "등급");
-    return `<div class="grade-row"><div>${d.name}</div><div class="grade-badge">${show}</div></div>`;
-  }).join("");
-  return `<div class="metric-card"><div class="mhead"><div class="mtitle">간호등급 (건강보험 기준)</div><div class="munit">숫자가 낮을수록 상위 등급</div></div>${rows}</div>`;
+
+function renderWeekdayChart() {
+  const wdNames = ['일','월','화','수','목','금','토'];
+  const buckets = Array.from({length:7}, () => ({joh:0,total:0}));
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 56);
+  statsCache.forEach(r => {
+    const d = new Date(r.date);
+    if (d < cutoff) return;
+    const wd = d.getDay();
+    buckets[wd].joh += r.joh;
+    buckets[wd].total += r.total;
+  });
+  const rates = buckets.map(b => b.total ? Math.round((b.total-b.joh)/b.total*1000)/10 : 0);
+  destroyChart('weekday');
+  charts.weekday = new Chart(document.getElementById('chartWeekday'), {
+    type: 'bar',
+    data: { labels: wdNames, datasets: [{ label: '미조회율(%)', data: rates, backgroundColor: '#2e5484' }] },
+    options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
+  });
 }
-function renderResults(data){
-  const box = document.getElementById("results");
-  box.innerHTML = [
-    barCard("의사총수","명","drTotCnt",data),
-    barCard("전문의 수 (의과+치과+한방)","명","sdrCnt",data),
-    barCard("MRI 보유대수","대","mriCnt",data),
-    barCard("CT 보유대수","대","ctCnt",data),
-    barCard("PET 보유대수","대","petCnt",data),
-    barCard("초음파 보유대수","대","sonoCnt",data),
-    gradeCard(data),
-    barCard("운영 진료과목 수","개","dgsbjtCnt",data),
-    barCard("특수진료 가능분야 수","개","spclDiagCnt",data),
-    barCard("기타 인력 총수","명","etcHstCnt",data),
-    barCard("허가병상수 (permSbdCnt)","병상 · 필드 검증 필요","permSbdCnt",data),
-    barCard("일반병상수 (stdSickbdCnt)","병상 · 필드 검증 필요","stdSickbdCnt",data),
-    barCard("상급병상수 (hghrSickbdCnt)","병상 · 필드 검증 필요","hghrSickbdCnt",data),
-    barCard("교통정보 등록 항목 수","건 · 참고용","trnsprtCnt",data),
-    barCard("전문병원 지정분야 수","개 · 참고용","spclHospCnt",data),
-    barCard("식대가산 등록 항목 수","건 · 참고용","foepCnt",data),
-  ].join("");
-  box.style.display = "flex";
+
+function renderMonthlyChart() {
+  const months = {};
+  statsCache.forEach(r => {
+    const m = r.date.slice(0,7);
+    if (!months[m]) months[m] = {joh:0,total:0};
+    months[m].joh += r.joh; months[m].total += r.total;
+  });
+  const keys = Object.keys(months).sort();
+  destroyChart('monthly');
+  charts.monthly = new Chart(document.getElementById('chartMonthly'), {
+    type: 'line',
+    data: {
+      labels: keys,
+      datasets: [
+        { label: '조회', data: keys.map(k=>months[k].joh), borderColor:'#2e9e5b', backgroundColor:'#2e9e5b', tension:.2 },
+        { label: '전체', data: keys.map(k=>months[k].total), borderColor:'#1b3a5c', backgroundColor:'#1b3a5c', tension:.2 }
+      ]
+    },
+    options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
+  });
 }
-function exportExcel(){
-  const data = collected.filter(d=>!d.error);
-  if(data.length===0) return;
-  const rows = data.map(d=>({
-    "병원명":d.name,"의사총수":d.drTotCnt,"전문의수":d.sdrCnt,
-    "MRI":d.mriCnt,"CT":d.ctCnt,"PET":d.petCnt,"초음파":d.sonoCnt,
-    "간호등급(건보)":d.nursingGrade,"진료과목수":d.dgsbjtCnt,
-    "특수진료분야수":d.spclDiagCnt,"기타인력총수":d.etcHstCnt,
-    "허가병상수(검증필요)":d.permSbdCnt,"일반병상수(검증필요)":d.stdSickbdCnt,"상급병상수(검증필요)":d.hghrSickbdCnt,
-    "교통정보항목수":d.trnsprtCnt,"전문병원지정분야수":d.spclHospCnt,"식대가산항목수":d.foepCnt
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "병원비교");
-  XLSX.writeFile(wb, `병원인프라비교_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+/* ---------- 3) 마스터 화면 ---------- */
+let masterPw = '';
+
+document.getElementById('masterLoginBtn').addEventListener('click', async () => {
+  const pw = document.getElementById('masterPw').value;
+  const res = await callApi('masterLogin', { password: pw });
+  const msg = document.getElementById('masterLoginMsg');
+  if (res.ok) {
+    masterPw = pw;
+    document.getElementById('masterLoginBox').style.display = 'none';
+    document.getElementById('masterPanel').style.display = 'block';
+    loadMasterStatus();
+  } else {
+    msg.className = 'msg err'; msg.textContent = res.error;
+  }
+});
+
+async function loadMasterStatus() {
+  const res = await callApi('getTodayStatus', {});
+  if (!res.ok) return;
+  const grid = document.getElementById('statusGrid');
+  grid.innerHTML = '';
+  Object.keys(res.status).forEach(dept => {
+    const s = res.status[dept];
+    let cls = 'red', label = '미입력';
+    if (s.am && s.pm) { cls='green'; label='완료'; }
+    else if (s.am || s.pm) { cls='amber'; label = s.am ? '오전만' : '오후만'; }
+    const div = document.createElement('div');
+    div.className = 'status-item';
+    div.innerHTML = `<span class="dot ${cls}"></span>${dept} <div style="color:#888;margin-top:3px;">${label}</div>`;
+    grid.appendChild(div);
+  });
 }
+
+function populateMasterDeptSelects() {
+  ['unlockDept','removeDeptSelect'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    departments.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+document.getElementById('unlockBtn').addEventListener('click', async () => {
+  const date = document.getElementById('unlockDate').value;
+  const dept = document.getElementById('unlockDept').value;
+  const msg = document.getElementById('unlockMsg');
+  if (!date) { msg.className='msg err'; msg.textContent='날짜를 입력하세요 (YYYY-MM-DD)'; return; }
+  const res = await callApi('masterUnlock', { password: masterPw, date, dept });
+  if (res.ok) { msg.className='msg ok'; msg.textContent = `잠금 해제 완료 (${res.unlockedRows}건)`; }
+  else { msg.className='msg err'; msg.textContent = res.error; }
+});
+
+document.getElementById('addDeptBtn').addEventListener('click', async () => {
+  const name = document.getElementById('newDeptName').value.trim();
+  const msg = document.getElementById('deptMgmtMsg');
+  if (!name) return;
+  const res = await callApi('masterAddDept', { password: masterPw, deptName: name });
+  if (res.ok) {
+    msg.className='msg ok'; msg.textContent = '부서가 추가되었습니다. 새로고침 후 반영됩니다.';
+    document.getElementById('newDeptName').value = '';
+    await initEntryView();
+  } else { msg.className='msg err'; msg.textContent = res.error; }
+});
+
+document.getElementById('removeDeptBtn').addEventListener('click', async () => {
+  const name = document.getElementById('removeDeptSelect').value;
+  const msg = document.getElementById('deptMgmtMsg');
+  const res = await callApi('masterRemoveDept', { password: masterPw, deptName: name });
+  if (res.ok) {
+    msg.className='msg ok'; msg.textContent = '부서가 삭제(사용중지)되었습니다.';
+    await initEntryView();
+  } else { msg.className='msg err'; msg.textContent = res.error; }
+});
+
+/* ---------- 초기화 ---------- */
+initEntryView();
+updateTotal();
 </script>
 </body>
 </html>
