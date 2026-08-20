@@ -65,15 +65,21 @@
   .dot.green{background:var(--green);} .dot.red{background:var(--red);} .dot.amber{background:var(--amber);}
   #masterLoginBox{max-width:320px;margin:40px auto;text-align:center;}
   #siteGate{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:100;}
-  #siteGate .box{background:#fff;border-radius:12px;padding:32px;max-width:320px;width:90%;text-align:center;}
-  #siteGate h2{color:var(--navy);margin-top:0;}
-  #siteGate input{margin-top:10px;}
-  #siteGate button{margin-top:12px;width:100%;}
-  #siteGate .err{color:var(--red);font-size:13px;margin-top:8px;}
+  #siteGate .box{background:#fff;border-radius:12px;padding:28px;max-width:300px;width:90%;text-align:center;}
+  #siteGate h2{color:var(--navy);margin-top:0;font-size:17px;}
+  #siteGate .err{color:var(--red);font-size:13px;margin-top:8px;min-height:16px;}
+  .pin-display{display:flex;justify-content:center;gap:10px;margin:14px 0;}
+  .pin-display span{width:16px;height:16px;border-radius:50%;border:2px solid var(--navy);}
+  .pin-display span.filled{background:var(--navy);}
   @media print{
     header, nav, .no-print{display:none !important;}
     body{background:#fff;}
-    .card{border:none;box-shadow:none;}
+    .card{border:none;box-shadow:none;padding:0;}
+    @page{ size: A4 landscape; margin: 10mm; }
+    #view-summary table.heat{font-size:10px;}
+    #view-summary table.heat th, #view-summary table.heat td{padding:3px 5px;}
+    #view-summary .stat-toolbar{display:none;}
+    #summaryTitle{font-size:14px;margin-bottom:6px;}
   }
 </style>
 </head>
@@ -82,9 +88,8 @@
 <div id="siteGate">
   <div class="box">
     <h2>내가먹는약 안내 현황</h2>
-    <p style="color:var(--muted);font-size:14px;">접속 비밀번호를 입력하세요</p>
-    <input type="password" id="siteGatePw" placeholder="비밀번호">
-    <button class="btn" id="siteGateBtn">입장</button>
+    <p style="color:var(--muted);font-size:13px;margin:4px 0 0;">비밀번호 4자리를 그냥 입력하세요 (클릭 불필요)</p>
+    <div class="pin-display" id="siteGatePinDisplay"><span></span><span></span><span></span><span></span></div>
     <div class="err" id="siteGateErr"></div>
   </div>
 </div>
@@ -189,10 +194,10 @@
   <!-- ===== 3) 마스터 화면 ===== -->
   <section id="view-master" class="view">
     <div id="masterLoginBox" class="card">
-      <h2>마스터 로그인</h2>
-      <input type="password" id="masterPw" placeholder="비밀번호">
-      <button class="btn" id="masterLoginBtn" style="width:100%;margin-top:10px;">로그인</button>
-      <div id="masterLoginMsg"></div>
+      <h2 style="text-align:center;">마스터 로그인</h2>
+      <p style="color:var(--muted);font-size:13px;text-align:center;margin:0;">비밀번호 4자리를 그냥 입력하세요 (클릭 불필요)</p>
+      <div class="pin-display" id="masterPinDisplay"><span></span><span></span><span></span><span></span></div>
+      <div id="masterLoginMsg" style="text-align:center;"></div>
     </div>
 
     <div id="masterPanel" style="display:none;">
@@ -204,7 +209,7 @@
       <div class="card">
         <h2>잠금 해제 (마감된 날짜 수정 허용)</h2>
         <div class="grid2">
-          <div class="field"><label>날짜</label><input type="text" id="unlockDate" placeholder="YYYY-MM-DD"></div>
+          <div class="field"><label>날짜</label><input type="text" id="unlockDate" placeholder="날짜 선택"></div>
           <div class="field"><label>부서</label><select id="unlockDept"></select></div>
         </div>
         <button class="btn secondary" id="unlockBtn">잠금 해제</button>
@@ -270,22 +275,41 @@ document.querySelectorAll('nav button').forEach(btn => {
   });
 });
 
-/* ---------- 사이트 접속 비밀번호 게이트 ---------- */
+/* ---------- 사이트 접속 비밀번호 게이트 (클릭 없이 바로 키보드 입력) ---------- */
 const SITE_PW = "4114"; // 사이트 접속 비밀번호 (마스터 관리자 비밀번호와 별개)
+
+function renderPin(displayEl, pin) {
+  const spans = displayEl.querySelectorAll('span');
+  spans.forEach((s, i) => s.classList.toggle('filled', i < pin.length));
+}
+
+let sitePin = '';
 function checkSiteGate() {
   if (localStorage.getItem('siteUnlocked') === '1') {
     document.getElementById('siteGate').style.display = 'none';
   }
 }
-document.getElementById('siteGateBtn').addEventListener('click', trySiteGate);
-document.getElementById('siteGatePw').addEventListener('keydown', e => { if (e.key === 'Enter') trySiteGate(); });
+document.addEventListener('keydown', (e) => {
+  const gateVisible = document.getElementById('siteGate').style.display !== 'none';
+  if (!gateVisible) return;
+  if (e.key >= '0' && e.key <= '9') {
+    if (sitePin.length >= 4) return;
+    sitePin += e.key;
+    renderPin(document.getElementById('siteGatePinDisplay'), sitePin);
+    if (sitePin.length === 4) trySiteGate();
+  } else if (e.key === 'Backspace') {
+    sitePin = sitePin.slice(0, -1);
+    renderPin(document.getElementById('siteGatePinDisplay'), sitePin);
+  }
+});
 function trySiteGate() {
-  const val = document.getElementById('siteGatePw').value;
-  if (val === SITE_PW) {
+  if (sitePin === SITE_PW) {
     localStorage.setItem('siteUnlocked', '1');
     document.getElementById('siteGate').style.display = 'none';
   } else {
     document.getElementById('siteGateErr').textContent = '비밀번호가 올바르지 않습니다.';
+    sitePin = '';
+    setTimeout(() => renderPin(document.getElementById('siteGatePinDisplay'), sitePin), 200);
   }
 }
 checkSiteGate();
@@ -450,20 +474,41 @@ async function loadSummaryTable(date) {
   const byDept = {};
   res.rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
 
+  const colSum = { joh:0, cert:0, pw:0, refuse:0, etc:0, total:0, grand:0 };
   let html = '';
   Object.keys(byDept).forEach(dept => {
     const am = byDept[dept]['오전'] || {}, pm = byDept[dept]['오후'] || {};
     const grandTotal = (Number(am.total)||0) + (Number(pm.total)||0);
+    const writerAm = (am.writer || '').trim(), writerPm = (pm.writer || '').trim();
+    let writerCombined;
+    if (writerAm && writerPm && writerAm !== writerPm) writerCombined = `오전:${writerAm} / 오후:${writerPm}`;
+    else writerCombined = writerAm || writerPm || '';
+
+    colSum.joh += (Number(am.joh)||0)+(Number(pm.joh)||0);
+    colSum.cert += (Number(am.mj_cert)||0)+(Number(pm.mj_cert)||0);
+    colSum.pw += (Number(am.mj_pw)||0)+(Number(pm.mj_pw)||0);
+    colSum.refuse += (Number(am.mj_refuse)||0)+(Number(pm.mj_refuse)||0);
+    colSum.etc += (Number(am.mj_etc)||0)+(Number(pm.mj_etc)||0);
+    colSum.total += grandTotal;
+    colSum.grand += grandTotal;
+
     ['오전','오후'].forEach((ampm, idx) => {
       const e = byDept[dept][ampm] || {};
       html += '<tr>';
       if (idx === 0) html += `<td rowspan="2" style="font-weight:600;">${dept}</td>`;
       html += `<td>${ampm}</td><td>${e.joh||0}</td><td>${e.mj_cert||0}</td><td>${e.mj_pw||0}</td><td>${e.mj_refuse||0}</td><td>${e.mj_etc||0}</td><td>${e.total||0}</td>`;
-      if (idx === 0) html += `<td rowspan="2" style="font-weight:700;">${grandTotal}</td>`;
-      html += `<td>${e.writer||''}</td>`;
+      if (idx === 0) {
+        html += `<td rowspan="2" style="font-weight:700;">${grandTotal}</td>`;
+        html += `<td rowspan="2">${writerCombined}</td>`;
+      }
       html += '</tr>';
     });
   });
+  html += `<tr style="background:#eef2f8;font-weight:800;">
+      <td colspan="2">합계</td>
+      <td>${colSum.joh}</td><td>${colSum.cert}</td><td>${colSum.pw}</td><td>${colSum.refuse}</td><td>${colSum.etc}</td><td>${colSum.total}</td>
+      <td>${colSum.grand}</td><td></td>
+    </tr>`;
   tbody.innerHTML = html || '<tr><td colspan="10">데이터가 없습니다.</td></tr>';
 }
 
@@ -587,20 +632,38 @@ document.getElementById('printBtn').addEventListener('click', () => window.print
 
 /* ---------- 3) 마스터 화면 ---------- */
 let masterPw = '';
+let masterPin = '';
 
-document.getElementById('masterLoginBtn').addEventListener('click', async () => {
-  const pw = document.getElementById('masterPw').value;
-  const res = await callApi('masterLogin', { password: pw });
+document.addEventListener('keydown', (e) => {
+  const box = document.getElementById('masterLoginBox');
+  const masterViewActive = document.getElementById('view-master').classList.contains('active');
+  if (!masterViewActive || box.style.display === 'none') return;
+  if (e.key >= '0' && e.key <= '9') {
+    if (masterPin.length >= 4) return;
+    masterPin += e.key;
+    renderPin(document.getElementById('masterPinDisplay'), masterPin);
+    if (masterPin.length === 4) tryMasterLogin();
+  } else if (e.key === 'Backspace') {
+    masterPin = masterPin.slice(0, -1);
+    renderPin(document.getElementById('masterPinDisplay'), masterPin);
+  }
+});
+
+async function tryMasterLogin() {
+  const res = await callApi('masterLogin', { password: masterPin });
   const msg = document.getElementById('masterLoginMsg');
   if (res.ok) {
-    masterPw = pw;
+    masterPw = masterPin;
     document.getElementById('masterLoginBox').style.display = 'none';
     document.getElementById('masterPanel').style.display = 'block';
     loadMasterStatus();
+    initUnlockDatePicker();
   } else {
-    msg.className = 'msg err'; msg.textContent = res.error;
+    msg.className = 'msg err'; msg.textContent = '비밀번호가 올바르지 않습니다.';
+    masterPin = '';
+    setTimeout(() => renderPin(document.getElementById('masterPinDisplay'), masterPin), 200);
   }
-});
+}
 
 async function loadMasterStatus() {
   const res = await callApi('getTodayStatus', {});
@@ -631,11 +694,17 @@ function populateMasterDeptSelects() {
   });
 }
 
+let unlockDatePicker;
+function initUnlockDatePicker() {
+  if (unlockDatePicker) return;
+  unlockDatePicker = flatpickr('#unlockDate', { locale: 'ko', maxDate: todayStr });
+}
+
 document.getElementById('unlockBtn').addEventListener('click', async () => {
   const date = document.getElementById('unlockDate').value;
   const dept = document.getElementById('unlockDept').value;
   const msg = document.getElementById('unlockMsg');
-  if (!date) { msg.className='msg err'; msg.textContent='날짜를 입력하세요 (YYYY-MM-DD)'; return; }
+  if (!date) { msg.className='msg err'; msg.textContent='날짜를 선택하세요'; return; }
   const res = await callApi('masterUnlock', { password: masterPw, date, dept });
   if (res.ok) { msg.className='msg ok'; msg.textContent = `잠금 해제 완료 (${res.unlockedRows}건)`; }
   else { msg.className='msg err'; msg.textContent = res.error; }
