@@ -167,7 +167,7 @@
         💡 잘못 입력하셨나요? 오늘 데이터는 모든 칸을 <b>0</b>으로 바꾸고 저장을 누르면 그대로 지워집니다.<br>
         🕛 지난 날짜도 자유롭게 수정 가능합니다 (자동으로 잠기지 않습니다). 마스터가 특정 날짜를 마감 처리(잠금)한 경우에만 수정이 막히며, 그때는 마스터에게 잠금 해제를 요청하세요.
       </p>
-      <div style="overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:8px;">
+      <div style="overflow:auto;max-height:85vh;border:1px solid var(--line);border-radius:8px;">
         <table class="heat" id="entryTable">
           <thead>
             <tr>
@@ -198,10 +198,9 @@
   <section id="view-summary" class="view">
     <div class="card">
       <div class="stat-toolbar">
-        <div>
-          <label>조회 기간 (기본: 오늘)</label>
-          <input type="text" id="summaryDate" placeholder="기간 선택">
-        </div>
+        <div><label>시작일</label><input type="text" id="summaryFrom" placeholder="시작일"></div>
+        <div><label>종료일</label><input type="text" id="summaryTo" placeholder="종료일"></div>
+        <div style="align-self:end;"><button class="btn no-print" id="summarySearchBtn">조회</button></div>
         <button class="btn secondary no-print" id="summaryPrintBtn" style="margin-left:auto;">인쇄 / PDF</button>
       </div>
       <div id="summaryContent"></div>
@@ -212,10 +211,9 @@
   <section id="view-stats" class="view">
     <div class="card">
       <div class="stat-toolbar">
-        <div>
-          <label>조회 기간 (기본: 오늘)</label>
-          <input type="text" id="statDate" placeholder="기간 선택">
-        </div>
+        <div><label>시작일</label><input type="text" id="statFrom" placeholder="시작일"></div>
+        <div><label>종료일</label><input type="text" id="statTo" placeholder="종료일"></div>
+        <div style="align-self:end;"><button class="btn no-print" id="statSearchBtn">조회</button></div>
         <button class="btn secondary no-print" id="printBtn" style="margin-left:auto;">인쇄 / PDF</button>
       </div>
       <h2>부서별 현황 (선택 기간 합계)</h2>
@@ -420,7 +418,7 @@ async function loadDatesWithData() {
   const res = await callApi('getStats', { from, to });
   if (res.ok) {
     res.rows.forEach(r => { if ((Number(r.total)||0) > 0) datesWithData.add(r.date); });
-    [entryPicker, summaryPicker, statPicker].forEach(p => { if (p) p.redraw(); });
+    [entryPicker, summaryFromPicker, summaryToPicker, statFromPicker, statToPicker].forEach(p => { if (p) p.redraw(); });
   }
 }
 
@@ -606,21 +604,22 @@ async function saveOneRow(tr, date) {
 
 
 /* ---------- 2) 종합 화면 (엑셀 원본 레이아웃, 읽기전용) ---------- */
-let summaryPicker;
+let summaryFromPicker, summaryToPicker;
 
 function initSummaryPicker() {
-  summaryPicker = flatpickr('#summaryDate', {
-    locale: 'ko',
-    mode: 'range',
-    defaultDate: [todayStr, todayStr],
-    maxDate: todayStr,
-    onDayCreate: onDayCreateDots,
-    onChange: (sel) => { if (sel.length === 2) loadSummaryRange(ymdOf(sel[0]), ymdOf(sel[1])); }
-  });
+  summaryFromPicker = flatpickr('#summaryFrom', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
+  summaryToPicker = flatpickr('#summaryTo', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
 }
 
+document.getElementById('summarySearchBtn').addEventListener('click', () => {
+  const from = summaryFromPicker.selectedDates[0] ? ymdOf(summaryFromPicker.selectedDates[0]) : todayStr;
+  const to = summaryToPicker.selectedDates[0] ? ymdOf(summaryToPicker.selectedDates[0]) : todayStr;
+  if (from > to) { alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
+  loadSummaryRange(from, to);
+});
+
 async function loadSummaryView() {
-  if (!summaryPicker) initSummaryPicker();
+  if (!summaryFromPicker) initSummaryPicker();
   loadSummaryRange(todayStr, todayStr);
 }
 
@@ -696,23 +695,24 @@ async function loadSummaryRange(from, to) {
 document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
 
 
-let statPicker;
+let statFromPicker, statToPicker;
 let statsCache = [];
 let charts = {};
 
 function initStatsPicker() {
-  statPicker = flatpickr('#statDate', {
-    locale: 'ko',
-    mode: 'range',
-    defaultDate: [todayStr, todayStr],
-    maxDate: todayStr,
-    onDayCreate: onDayCreateDots,
-    onChange: (sel) => { if (sel.length === 2) loadStatsRange(ymdOf(sel[0]), ymdOf(sel[1])); }
-  });
+  statFromPicker = flatpickr('#statFrom', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
+  statToPicker = flatpickr('#statTo', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
 }
 
+document.getElementById('statSearchBtn').addEventListener('click', () => {
+  const from = statFromPicker.selectedDates[0] ? ymdOf(statFromPicker.selectedDates[0]) : todayStr;
+  const to = statToPicker.selectedDates[0] ? ymdOf(statToPicker.selectedDates[0]) : todayStr;
+  if (from > to) { alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
+  loadStatsRange(from, to);
+});
+
 async function loadStatsView() {
-  if (!statPicker) initStatsPicker();
+  if (!statFromPicker) initStatsPicker();
   loadStatsRange(todayStr, todayStr);
 }
 
