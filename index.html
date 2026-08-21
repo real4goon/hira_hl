@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>내가먹는약 안내 현황</title>
+<title>한림대학교성심병원 입원 환자 자가약 조회프로그램 안내 현황</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
@@ -19,7 +19,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--text);}
-  header{background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  header{background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;padding:16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;}
   header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.2px;}
   nav{display:flex;gap:6px;}
   nav button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;padding:8px 14px;border-radius:7px;cursor:pointer;font-size:14px;font-family:inherit;transition:background .15s;}
@@ -111,6 +111,9 @@
   .pin-display{display:flex;justify-content:center;gap:10px;margin:14px 0;}
   .pin-display span{width:16px;height:16px;border-radius:50%;border:2px solid var(--navy);}
   .pin-display span.filled{background:var(--navy);}
+  .flatpickr-day{position:relative;}
+  .fp-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--navy-light);}
+  .flatpickr-day.selected .fp-dot{background:#fff;}
   @media print{
     header, nav, .no-print{display:none !important;}
     body{background:#fff;}
@@ -119,7 +122,9 @@
     #view-summary table.heat{font-size:10px;}
     #view-summary table.heat th, #view-summary table.heat td{padding:3px 5px;}
     #view-summary .stat-toolbar{display:none;}
-    #summaryTitle{font-size:14px;margin-bottom:6px;}
+    #summaryContent h2{font-size:14px;margin:0 0 6px;}
+    .page-break{page-break-after:always;}
+    .page-break:last-child{page-break-after:auto;}
   }
 </style>
 </head>
@@ -135,7 +140,7 @@
 </div>
 
 <header class="no-print">
-  <h1>심평원 내가먹는약 안내 현황</h1>
+  <h1>한림대학교성심병원 입원 환자 자가약 조회프로그램 안내 현황</h1>
   <nav>
     <button data-view="entry" class="active">부서 입력</button>
     <button data-view="summary">종합</button>
@@ -162,7 +167,7 @@
         💡 잘못 입력하셨나요? 오늘 데이터는 모든 칸을 <b>0</b>으로 바꾸고 저장을 누르면 그대로 지워집니다.<br>
         🕛 지난 날짜도 자유롭게 수정 가능합니다 (자동으로 잠기지 않습니다). 마스터가 특정 날짜를 마감 처리(잠금)한 경우에만 수정이 막히며, 그때는 마스터에게 잠금 해제를 요청하세요.
       </p>
-      <div style="overflow-x:auto;">
+      <div style="overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:8px;">
         <table class="heat" id="entryTable">
           <thead>
             <tr>
@@ -194,18 +199,12 @@
     <div class="card">
       <div class="stat-toolbar">
         <div>
-          <label>조회 날짜</label>
-          <input type="text" id="summaryDate" placeholder="날짜 선택">
+          <label>조회 기간 (기본: 오늘)</label>
+          <input type="text" id="summaryDate" placeholder="기간 선택">
         </div>
         <button class="btn secondary no-print" id="summaryPrintBtn" style="margin-left:auto;">인쇄 / PDF</button>
       </div>
-      <h2 id="summaryTitle">심평원 내가 먹는약 한눈에 서비스 안내 현황</h2>
-      <table class="heat" id="summaryTable">
-        <thead>
-          <tr><th>부서</th><th>구분</th><th>조회</th><th>인증서無</th><th>비밀번호분실</th><th>안내거부</th><th>기타</th><th>카톡미사용</th><th>계</th><th>합계</th><th>작성자</th></tr>
-        </thead>
-        <tbody id="summaryTbody"><tr><td colspan="11">불러오는 중...</td></tr></tbody>
-      </table>
+      <div id="summaryContent"></div>
     </div>
   </section>
 
@@ -214,27 +213,27 @@
     <div class="card">
       <div class="stat-toolbar">
         <div>
-          <label>조회 날짜</label>
-          <input type="text" id="statDate" placeholder="날짜 선택">
+          <label>조회 기간 (기본: 오늘)</label>
+          <input type="text" id="statDate" placeholder="기간 선택">
         </div>
         <button class="btn secondary no-print" id="printBtn" style="margin-left:auto;">인쇄 / PDF</button>
       </div>
-      <h2>부서별 현황 (선택일)</h2>
+      <h2>부서별 현황 (선택 기간 합계)</h2>
       <div id="heatTableWrap">데이터를 불러오는 중...</div>
     </div>
 
     <div class="card">
-      <h2>시간대별 비교 (오전 vs 오후, 선택일)</h2>
+      <h2>시간대별 비교 (오전 vs 오후, 선택 기간)</h2>
       <div class="chart-wrap"><canvas id="chartAmPm"></canvas></div>
     </div>
 
     <div class="card">
-      <h2>요일별 분석 (최근 8주 평균 미조회율)</h2>
+      <h2>요일별 분석 (선택 기간 내 요일별 평균 미조회율)</h2>
       <div class="chart-wrap"><canvas id="chartWeekday"></canvas></div>
     </div>
 
     <div class="card">
-      <h2>월별 통계 (최근 6개월)</h2>
+      <h2>월별 통계 (선택 기간)</h2>
       <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
     </div>
   </section>
@@ -403,6 +402,28 @@ if (SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
 let departments = [];
 let entryPicker;
 
+/* ---------- 달력에 데이터 있는 날짜 점 표시 (공용) ---------- */
+let datesWithData = new Set();
+function ymdOf(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+function onDayCreateDots(dObj, dStr, fp, dayElem) {
+  if (datesWithData.has(ymdOf(dayElem.dateObj))) {
+    const dot = document.createElement('span');
+    dot.className = 'fp-dot';
+    dayElem.appendChild(dot);
+  }
+}
+async function loadDatesWithData() {
+  const to = todayStr;
+  const from = new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0,10);
+  const res = await callApi('getStats', { from, to });
+  if (res.ok) {
+    res.rows.forEach(r => { if ((Number(r.total)||0) > 0) datesWithData.add(r.date); });
+    [entryPicker, summaryPicker, statPicker].forEach(p => { if (p) p.redraw(); });
+  }
+}
+
 async function loadDepartmentsList() {
   const res = await callApi('getDepartments', {});
   if (res.ok) departments = res.departments;
@@ -414,6 +435,7 @@ function initEntryDatePicker() {
     locale: 'ko',
     defaultDate: todayStr,
     maxDate: todayStr,
+    onDayCreate: onDayCreateDots,
     onChange: (sel, dateStr) => loadEntryTable(dateStr)
   });
 }
@@ -589,29 +611,24 @@ let summaryPicker;
 function initSummaryPicker() {
   summaryPicker = flatpickr('#summaryDate', {
     locale: 'ko',
-    defaultDate: todayStr,
-    onChange: (sel, dateStr) => loadSummaryTable(dateStr)
+    mode: 'range',
+    defaultDate: [todayStr, todayStr],
+    maxDate: todayStr,
+    onDayCreate: onDayCreateDots,
+    onChange: (sel) => { if (sel.length === 2) loadSummaryRange(ymdOf(sel[0]), ymdOf(sel[1])); }
   });
 }
 
 async function loadSummaryView() {
   if (!summaryPicker) initSummaryPicker();
-  loadSummaryTable(todayStr);
+  loadSummaryRange(todayStr, todayStr);
 }
 
-async function loadSummaryTable(date) {
-  date = date || todayStr;
-  const tbody = document.getElementById('summaryTbody');
-  tbody.innerHTML = '<tr><td colspan="11">불러오는 중...</td></tr>';
-  const res = await callApi('getDayEntries', { date });
-  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="11" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
-  document.getElementById('summaryTitle').textContent = `심평원 내가 먹는약 한눈에 서비스 안내 현황 (${date})`;
-
+function summaryTableHtml(date, rows) {
   const byDept = {};
-  res.rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
-
+  rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
   const colSum = { joh:0, cert:0, pw:0, refuse:0, etc:0, kakao:0, total:0, grand:0 };
-  let html = '';
+  let body = '';
   Object.keys(byDept).forEach(dept => {
     const am = byDept[dept]['오전'] || {}, pm = byDept[dept]['오후'] || {};
     const grandTotal = (Number(am.total)||0) + (Number(pm.total)||0);
@@ -631,22 +648,49 @@ async function loadSummaryTable(date) {
 
     ['오전','오후'].forEach((ampm, idx) => {
       const e = byDept[dept][ampm] || {};
-      html += '<tr>';
-      if (idx === 0) html += `<td rowspan="2" style="font-weight:600;">${dept}</td>`;
-      html += `<td>${ampm}</td><td>${e.joh||0}</td><td>${e.mj_cert||0}</td><td>${e.mj_pw||0}</td><td>${e.mj_refuse||0}</td><td>${e.mj_etc||0}</td><td>${e.mj_kakao||0}</td><td>${e.total||0}</td>`;
+      body += '<tr>';
+      if (idx === 0) body += `<td rowspan="2" style="font-weight:600;">${dept}</td>`;
+      body += `<td>${ampm}</td><td>${e.joh||0}</td><td>${e.mj_cert||0}</td><td>${e.mj_pw||0}</td><td>${e.mj_refuse||0}</td><td>${e.mj_etc||0}</td><td>${e.mj_kakao||0}</td><td>${e.total||0}</td>`;
       if (idx === 0) {
-        html += `<td rowspan="2" style="font-weight:700;">${grandTotal}</td>`;
-        html += `<td rowspan="2">${writerCombined}</td>`;
+        body += `<td rowspan="2" style="font-weight:700;">${grandTotal}</td>`;
+        body += `<td rowspan="2">${writerCombined}</td>`;
       }
-      html += '</tr>';
+      body += '</tr>';
     });
   });
-  html += `<tr style="background:#eef2f8;font-weight:800;">
+  body += `<tr style="background:#eef2f8;font-weight:800;">
       <td colspan="2">합계</td>
       <td>${colSum.joh}</td><td>${colSum.cert}</td><td>${colSum.pw}</td><td>${colSum.refuse}</td><td>${colSum.etc}</td><td>${colSum.kakao}</td><td>${colSum.total}</td>
       <td>${colSum.grand}</td><td></td>
     </tr>`;
-  tbody.innerHTML = html || '<tr><td colspan="11">데이터가 없습니다.</td></tr>';
+  return `
+    <h2 style="margin-top:20px;">심평원 내가 먹는약 한눈에 서비스 안내 현황 (${date})</h2>
+    <table class="heat">
+      <thead><tr><th>부서</th><th>구분</th><th>조회</th><th>인증서無</th><th>비밀번호분실</th><th>안내거부</th><th>기타</th><th>카톡미사용</th><th>계</th><th>합계</th><th>작성자</th></tr></thead>
+      <tbody>${body || '<tr><td colspan="11">데이터가 없습니다.</td></tr>'}</tbody>
+    </table>
+    <div class="page-break"></div>
+  `;
+}
+
+function dateRangeList(from, to) {
+  const dates = [];
+  let d = new Date(from + 'T00:00:00');
+  const end = new Date(to + 'T00:00:00');
+  while (d <= end) { dates.push(ymdOf(d)); d.setDate(d.getDate() + 1); }
+  return dates;
+}
+
+async function loadSummaryRange(from, to) {
+  const container = document.getElementById('summaryContent');
+  container.innerHTML = '불러오는 중...';
+  const dates = dateRangeList(from, to);
+  const results = await Promise.all(dates.map(d => callApi('getDayEntries', { date: d })));
+  let html = '';
+  results.forEach((res, i) => {
+    if (res.ok) html += summaryTableHtml(dates[i], res.rows);
+  });
+  container.innerHTML = html || '<p>데이터가 없습니다.</p>';
 }
 
 document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
@@ -659,15 +703,20 @@ let charts = {};
 function initStatsPicker() {
   statPicker = flatpickr('#statDate', {
     locale: 'ko',
-    defaultDate: todayStr,
-    onChange: () => renderHeatTable()
+    mode: 'range',
+    defaultDate: [todayStr, todayStr],
+    maxDate: todayStr,
+    onDayCreate: onDayCreateDots,
+    onChange: (sel) => { if (sel.length === 2) loadStatsRange(ymdOf(sel[0]), ymdOf(sel[1])); }
   });
 }
 
 async function loadStatsView() {
   if (!statPicker) initStatsPicker();
-  const to = todayStr;
-  const from = new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().slice(0,10);
+  loadStatsRange(todayStr, todayStr);
+}
+
+async function loadStatsRange(from, to) {
   const res = await callApi('getStats', { from, to });
   if (res.ok) {
     statsCache = res.rows;
@@ -681,34 +730,30 @@ async function loadStatsView() {
 }
 
 function renderHeatTable() {
-  const sel = statPicker.selectedDates[0] ? statPicker.formatDate(statPicker.selectedDates[0], 'Y-m-d') : todayStr;
-  const rows = statsCache.filter(r => r.date === sel);
   const byDept = {};
-  rows.forEach(r => {
-    if (!byDept[r.dept]) byDept[r.dept] = {};
-    byDept[r.dept][r.ampm] = r;
+  statsCache.forEach(r => {
+    if (!byDept[r.dept]) byDept[r.dept] = { joh:0, total:0, ampm:{ '오전':{joh:0,total:0}, '오후':{joh:0,total:0} } };
+    byDept[r.dept].ampm[r.ampm].joh += Number(r.joh)||0;
+    byDept[r.dept].ampm[r.ampm].total += Number(r.total)||0;
   });
   let html = '<table class="heat"><tr><th>부서</th><th>오전 조회</th><th>오전 미조회</th><th>오후 조회</th><th>오후 미조회</th></tr>';
   Object.keys(byDept).sort().forEach(dept => {
-    const am = byDept[dept]['오전'], pm = byDept[dept]['오후'];
-    const amMiss = am ? (am.total - am.joh) : '-';
-    const pmMiss = pm ? (pm.total - pm.joh) : '-';
-    html += `<tr><td>${dept}</td><td>${am?am.joh:'-'}</td><td style="color:${amMiss>0?'#d6455d':'inherit'}">${amMiss}</td><td>${pm?pm.joh:'-'}</td><td style="color:${pmMiss>0?'#d6455d':'inherit'}">${pmMiss}</td></tr>`;
+    const am = byDept[dept].ampm['오전'], pm = byDept[dept].ampm['오후'];
+    const amMiss = am.total - am.joh, pmMiss = pm.total - pm.joh;
+    html += `<tr><td>${dept}</td><td>${am.joh}</td><td style="color:${amMiss>0?'#d6455d':'inherit'}">${amMiss}</td><td>${pm.joh}</td><td style="color:${pmMiss>0?'#d6455d':'inherit'}">${pmMiss}</td></tr>`;
   });
   html += '</table>';
-  if (Object.keys(byDept).length === 0) html = '<p style="color:#888;">해당 날짜 데이터가 없습니다.</p>';
+  if (Object.keys(byDept).length === 0) html = '<p style="color:#888;">해당 기간 데이터가 없습니다.</p>';
   document.getElementById('heatTableWrap').innerHTML = html;
 }
 
 function destroyChart(key) { if (charts[key]) charts[key].destroy(); }
 
 function renderAmPmChart() {
-  const sel = statPicker.selectedDates[0] ? statPicker.formatDate(statPicker.selectedDates[0], 'Y-m-d') : todayStr;
-  const rows = statsCache.filter(r => r.date === sel);
-  const amRows = rows.filter(r => r.ampm === '오전');
-  const pmRows = rows.filter(r => r.ampm === '오후');
-  const sum = arr => arr.reduce((s,r)=>s+r.total,0);
-  const sumJoh = arr => arr.reduce((s,r)=>s+r.joh,0);
+  const amRows = statsCache.filter(r => r.ampm === '오전');
+  const pmRows = statsCache.filter(r => r.ampm === '오후');
+  const sum = arr => arr.reduce((s,r)=>s+(Number(r.total)||0),0);
+  const sumJoh = arr => arr.reduce((s,r)=>s+(Number(r.joh)||0),0);
   destroyChart('ampm');
   charts.ampm = new Chart(document.getElementById('chartAmPm'), {
     type: 'bar',
@@ -726,13 +771,11 @@ function renderAmPmChart() {
 function renderWeekdayChart() {
   const wdNames = ['일','월','화','수','목','금','토'];
   const buckets = Array.from({length:7}, () => ({joh:0,total:0}));
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 56);
   statsCache.forEach(r => {
     const d = new Date(r.date);
-    if (d < cutoff) return;
     const wd = d.getDay();
-    buckets[wd].joh += r.joh;
-    buckets[wd].total += r.total;
+    buckets[wd].joh += Number(r.joh)||0;
+    buckets[wd].total += Number(r.total)||0;
   });
   const rates = buckets.map(b => b.total ? Math.round((b.total-b.joh)/b.total*1000)/10 : 0);
   destroyChart('weekday');
@@ -748,7 +791,7 @@ function renderMonthlyChart() {
   statsCache.forEach(r => {
     const m = r.date.slice(0,7);
     if (!months[m]) months[m] = {joh:0,total:0};
-    months[m].joh += r.joh; months[m].total += r.total;
+    months[m].joh += Number(r.joh)||0; months[m].total += Number(r.total)||0;
   });
   const keys = Object.keys(months).sort();
   destroyChart('monthly');
@@ -1066,6 +1109,7 @@ document.getElementById('deleteDateBtn').addEventListener('click', async () => {
 loadDepartmentsList();
 initEntryDatePicker();
 loadEntryTable(todayStr);
+loadDatesWithData();
 </script>
 </body>
 </html>
