@@ -160,7 +160,7 @@
       </div>
       <p style="font-size:12.5px;color:var(--muted);background:#f4f6fb;border-radius:6px;padding:8px 10px;margin:0 0 12px;">
         💡 잘못 입력하셨나요? 오늘 데이터는 모든 칸을 <b>0</b>으로 바꾸고 저장을 누르면 그대로 지워집니다.<br>
-        🕛 입력은 <b>당일 자정까지</b> 자유롭게 수정 가능하고, 자정이 지나면 자동으로 잠깁니다. 마감 후 수정이 필요하면 마스터에게 잠금 해제를 요청하세요.
+        🕛 지난 날짜도 자유롭게 수정 가능합니다 (자동으로 잠기지 않습니다). 마스터가 특정 날짜를 마감 처리(잠금)한 경우에만 수정이 막히며, 그때는 마스터에게 잠금 해제를 요청하세요.
       </p>
       <div style="overflow-x:auto;">
         <table class="heat" id="entryTable">
@@ -255,13 +255,17 @@
       </div>
 
       <div class="card">
-        <h2>잠금 해제 (마감된 날짜 수정 허용)</h2>
+        <h2>날짜 잠금 관리</h2>
+        <p style="color:var(--muted);font-size:13px;margin-top:-6px;">기본적으로 모든 날짜는 잠겨있지 않아 자유롭게 수정할 수 있습니다. 마감이 확정된 날짜만 여기서 잠가두면, 부서 입력화면에서 그 날짜는 수정이 막힙니다.</p>
         <div class="grid2">
-          <div class="field"><label>날짜</label><input type="text" id="unlockDate" placeholder="날짜 선택"></div>
-          <div class="field"><label>부서</label><select id="unlockDept"></select></div>
+          <div class="field"><label>날짜</label><input type="text" id="lockDate" placeholder="날짜 선택"></div>
+          <div style="align-self:end;font-size:13px;color:var(--muted);" id="lockStatusDisplay"></div>
         </div>
-        <button class="btn secondary" id="unlockBtn">잠금 해제</button>
-        <div id="unlockMsg"></div>
+        <div class="grid2">
+          <button class="btn danger" id="lockDateBtn">이 날짜 잠그기</button>
+          <button class="btn secondary" id="unlockDateBtn">이 날짜 잠금 해제</button>
+        </div>
+        <div id="lockMsg"></div>
       </div>
 
       <div class="card">
@@ -436,7 +440,7 @@ async function loadEntryTable(date) {
   if (!res.ok) { tbody.innerHTML = `<tr><td colspan="17" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
 
   const badge = document.getElementById('entryDateBadge');
-  badge.textContent = res.isPast ? '과거 날짜 – 잠긴 항목은 마스터 잠금 해제 필요' : '오늘 – 자유롭게 수정 가능';
+  badge.textContent = res.locked ? '🔒 마스터가 잠근 날짜 – 수정 불가' : '자유롭게 수정 가능';
 
   const byDept = {};
   res.rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
@@ -818,7 +822,7 @@ async function loadMasterStatus() {
 }
 
 function populateMasterDeptSelects() {
-  ['unlockDept','removeDeptSelect'].forEach(id => {
+  ['removeDeptSelect'].forEach(id => {
     const sel = document.getElementById(id);
     sel.innerHTML = '';
     departments.forEach(d => {
@@ -829,19 +833,35 @@ function populateMasterDeptSelects() {
   });
 }
 
-let unlockDatePicker;
+let lockDatePicker;
 function initUnlockDatePicker() {
-  if (unlockDatePicker) return;
-  unlockDatePicker = flatpickr('#unlockDate', { locale: 'ko', maxDate: todayStr });
+  if (lockDatePicker) return;
+  lockDatePicker = flatpickr('#lockDate', { locale: 'ko', maxDate: todayStr, onChange: () => refreshLockStatus() });
 }
 
-document.getElementById('unlockBtn').addEventListener('click', async () => {
-  const date = document.getElementById('unlockDate').value;
-  const dept = document.getElementById('unlockDept').value;
-  const msg = document.getElementById('unlockMsg');
+async function refreshLockStatus() {
+  const date = lockDatePicker.selectedDates[0] ? lockDatePicker.formatDate(lockDatePicker.selectedDates[0], 'Y-m-d') : '';
+  const disp = document.getElementById('lockStatusDisplay');
+  if (!date) { disp.textContent = ''; return; }
+  const res = await callApi('getDayEntries', { date });
+  if (res.ok) disp.textContent = res.locked ? '🔒 현재 잠김' : '🔓 현재 해제됨';
+}
+
+document.getElementById('lockDateBtn').addEventListener('click', async () => {
+  const date = lockDatePicker.selectedDates[0] ? lockDatePicker.formatDate(lockDatePicker.selectedDates[0], 'Y-m-d') : '';
+  const msg = document.getElementById('lockMsg');
   if (!date) { msg.className='msg err'; msg.textContent='날짜를 선택하세요'; return; }
-  const res = await callApi('masterUnlock', { password: masterPw, date, dept });
-  if (res.ok) { msg.className='msg ok'; msg.textContent = `잠금 해제 완료 (${res.unlockedRows}건)`; }
+  const res = await callApi('masterLockDate', { password: masterPw, date });
+  if (res.ok) { msg.className='msg ok'; msg.textContent = `${date} 잠금 완료`; refreshLockStatus(); }
+  else { msg.className='msg err'; msg.textContent = res.error; }
+});
+
+document.getElementById('unlockDateBtn').addEventListener('click', async () => {
+  const date = lockDatePicker.selectedDates[0] ? lockDatePicker.formatDate(lockDatePicker.selectedDates[0], 'Y-m-d') : '';
+  const msg = document.getElementById('lockMsg');
+  if (!date) { msg.className='msg err'; msg.textContent='날짜를 선택하세요'; return; }
+  const res = await callApi('masterUnlockDate', { password: masterPw, date });
+  if (res.ok) { msg.className='msg ok'; msg.textContent = `${date} 잠금 해제 완료`; refreshLockStatus(); }
   else { msg.className='msg err'; msg.textContent = res.error; }
 });
 
