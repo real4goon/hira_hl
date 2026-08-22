@@ -3,1113 +3,900 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>한림대학교성심병원 입원 환자 자가약 조회프로그램 안내 현황</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ko.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<title>타병원 인프라 비교 v3.16</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#16324f; --navy-light:#2c5583; --navy-deep:#0d1f33; --bg:#eef1f6; --card:#ffffff;
-    --line:#e3e7ee; --text:#20262f; --muted:#7c8494; --green:#1f9d5c; --red:#d6455d; --amber:#dd9a28;
-    --am-tint:#eef4fc; --pm-tint:#fdf5ea; --row-alt:#f7f9fc;
+    --ink:#14213D; --ink-soft:#3A4A63;
+    --paper:#F4F6F5; --panel:#FFFFFF;
+    --accent:#2A6F6F; --accent-soft:#E4EFEE;
+    --brick:#C4432B; --brick-soft:#F6E7E2;
+    --gold:#B8863E; --gold-soft:#F3EBDB;
+    --line:#DBE1DE; --line-soft:#EAEEEC;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:var(--bg);color:var(--text);}
-  header{background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;padding:16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;}
-  header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.2px;}
-  nav{display:flex;gap:6px;}
-  nav button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;padding:8px 14px;border-radius:7px;cursor:pointer;font-size:14px;font-family:inherit;transition:background .15s;}
-  nav button:hover{background:rgba(255,255,255,.12);}
-  nav button.active{background:#fff;color:var(--navy);font-weight:700;border-color:#fff;}
-  main{max-width:1180px;margin:0 auto;padding:18px;}
-  .view{display:none;}
-  .view.active{display:block;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(20,30,50,.05);}
-  .card h2{font-size:15px;margin:0 0 14px;color:var(--navy);font-weight:700;}
-  label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:500;}
-  select, input[type=number], input[type=text], input[type=password]{
-    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font-size:14px;background:#fff;font-family:inherit;color:var(--text);transition:border-color .15s, box-shadow .15s;
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Pretendard',-apple-system,sans-serif;
   }
-  select:focus, input:focus{outline:none;border-color:var(--navy-light);box-shadow:0 0 0 3px rgba(44,85,131,.12);}
-  .dept-name-display{font-size:22px;font-weight:800;color:var(--navy);text-align:center;padding:10px 0;}
-  .ampm-toggle{display:flex;gap:8px;margin-bottom:14px;}
-  .ampm-toggle button{flex:1;padding:10px;border:1px solid var(--line);border-radius:7px;background:#fff;cursor:pointer;font-size:14px;font-family:inherit;}
-  .ampm-toggle button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-  .field{margin-bottom:10px;}
-  .total-box{background:#eef2f8;border-radius:8px;padding:10px;text-align:center;font-size:15px;font-weight:700;color:var(--navy);margin:10px 0;}
-  .btn{background:var(--navy);color:#fff;border:none;padding:11px 18px;border-radius:7px;font-size:14px;cursor:pointer;font-weight:600;font-family:inherit;transition:background .15s, transform .1s;}
-  .btn:hover{background:var(--navy-light);}
-  .btn:active{transform:scale(.97);}
-  .btn:disabled{opacity:.6;cursor:default;}
-  .btn.secondary{background:#fff;color:var(--navy);border:1px solid var(--navy);}
-  .btn.danger{background:var(--red);}
-  .msg{font-size:13px;margin-top:8px;padding:9px 12px;border-radius:7px;}
-  .msg.ok{background:#e6f7ed;color:var(--green);font-weight:600;}
-  .msg.err{background:#fdeaec;color:var(--red);font-weight:600;}
-  /* modal */
-  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:50;}
-  .modal-bg.active{display:flex;}
-  .modal{background:#fff;border-radius:10px;padding:24px;max-width:360px;width:90%;text-align:center;}
-  .modal p{font-size:15px;line-height:1.5;}
-  .modal .row{display:flex;gap:10px;margin-top:16px;}
-  .modal .row button{flex:1;padding:10px;border-radius:6px;border:none;cursor:pointer;font-size:14px;}
-  /* 통계 */
-  .stat-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
-  table.heat{width:100%;border-collapse:collapse;font-size:13px;}
-  table.heat th,table.heat td{border:1px solid var(--line);padding:7px 9px;text-align:center;}
-  table.heat th{background:#eef1f6;color:var(--navy);font-weight:700;}
-  canvas{max-height:300px;}
-  .chart-wrap{margin-top:14px;}
-  /* 마스터 */
-  .status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
-  .status-item{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;}
-  .status-item .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
-  .dot.green{background:var(--green);} .dot.red{background:var(--red);} .dot.amber{background:var(--amber);}
-  /* ===== 입력 화면 표 전용 스타일 ===== */
-  #entryTable{border-collapse:separate;border-spacing:0;font-size:13px;}
-  #entryTable thead th{background:var(--navy);color:#fff;font-weight:700;border-color:var(--navy-light);position:sticky;top:0;z-index:2;}
-  #entryTable thead tr:first-child th{top:0;}
-  #entryTable thead tr:nth-child(2) th{top:37px;font-size:12px;font-weight:600;}
-  #entryTable thead th.am-head{background:#2a5686;}
-  #entryTable thead th.pm-head{background:#8a5a1e;}
-  #entryTable tbody tr:nth-child(even){background:var(--row-alt);}
-  #entryTable tbody tr:hover{background:#eaf1fb;}
-  #entryTable td:first-child{
-    white-space:nowrap; min-width:92px; text-align:left; padding-left:12px;
-    font-weight:700; color:var(--navy); background:#f5f8fc; border-right:2px solid var(--line);
-  }
-  #entryTable tbody tr:nth-child(even) td:first-child{background:#eef2f8;}
-  #entryTable td[data-ampm="오전"]{background:var(--am-tint);}
-  #entryTable td[data-ampm="오후"]{background:var(--pm-tint);}
-  #entryTable tbody tr:hover td[data-ampm]{background:#e2ecfb;}
-  #entryTable td[data-ampm] input{width:46px;padding:6px 4px;text-align:center;border-radius:5px;font-size:13px;}
-  #entryTable input[type=number]::-webkit-inner-spin-button{opacity:.35;}
-  #entryTable td.total-cell{font-weight:800;color:var(--navy);background:#e4ecf7 !important;}
-  #entryTable td.joh-sum{background:#e3f5ea !important;color:var(--green);}
-  #entryTable td.miss-sum{background:#fdecee !important;color:var(--red);}
-  #entryTable td.last-saved{font-size:11.5px;color:var(--muted);}
-  #entryTable td:last-child, #entryTable th:last-child{
-    white-space:nowrap; position:sticky; right:0; z-index:1;
-    background:var(--card); border-left:2px solid var(--line); text-align:center;
-  }
-  #entryTable thead th:last-child{background:var(--navy);z-index:3;}
-  #entryTable tbody tr:nth-child(even) td:last-child{background:#f7f9fc;}
-  #entryTable tbody tr:hover td:last-child{background:#eaf1fb;}
-  #entryTable button[data-role=rowSaveBtn]{white-space:nowrap;min-width:52px;border-radius:7px;}
+  .app{display:flex;min-height:100vh;}
 
-  #masterLoginBox{max-width:320px;margin:40px auto;text-align:center;}
-  #siteGate{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:100;}
-  #siteGate .box{background:#fff;border-radius:12px;padding:28px;max-width:300px;width:90%;text-align:center;}
-  #siteGate h2{color:var(--navy);margin-top:0;font-size:17px;}
-  #siteGate .err{color:var(--red);font-size:13px;margin-top:8px;min-height:16px;}
-  .pin-display{display:flex;justify-content:center;gap:10px;margin:14px 0;}
-  .pin-display span{width:16px;height:16px;border-radius:50%;border:2px solid var(--navy);}
-  .pin-display span.filled{background:var(--navy);}
-  .flatpickr-day{position:relative;}
-  .fp-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--navy-light);}
-  .flatpickr-day.selected .fp-dot{background:#fff;}
-  @media print{
-    header, nav, .no-print{display:none !important;}
-    body{background:#fff;}
-    .card{border:none;box-shadow:none;padding:0;}
-    @page{ size: A4 landscape; margin: 10mm; }
-    #view-summary table.heat{font-size:10px;}
-    #view-summary table.heat th, #view-summary table.heat td{padding:3px 5px;}
-    #view-summary .stat-toolbar{display:none;}
-    #summaryContent h2{font-size:14px;margin:0 0 6px;}
-    .page-break{page-break-after:always;}
-    .page-break:last-child{page-break-after:auto;}
+  /* ---------- 좌측 사이드바 ---------- */
+  .sidebar{
+    width:280px; flex-shrink:0; background:var(--ink); color:#fff;
+    padding:22px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  .sidebar .eyebrow{font-size:11px;letter-spacing:.14em;color:#8FD3C9;font-weight:600;}
+  .versionbadge{
+    display:inline-block;background:var(--brick);color:#fff;font-size:12px;font-weight:800;
+    padding:3px 10px;border-radius:20px;margin:6px 0 4px;letter-spacing:.03em;
+  }
+  .sidebar h1{font-family:'Noto Serif KR',serif;font-size:19px;margin:4px 0 16px;}
+  .sidebar input[type=text]{
+    width:100%;border:none;border-radius:8px;padding:9px 11px;font-size:13px;
+    font-family:inherit;margin-bottom:10px;background:rgba(255,255,255,.1);color:#fff;
+  }
+  .sidebar input[type=text]::placeholder{color:rgba(255,255,255,.5);}
+  .selrow{display:flex;gap:6px;margin-bottom:12px;}
+  .selrow button{
+    flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+    color:#fff;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit;
+  }
+  .region-title{font-size:10.5px;letter-spacing:.08em;color:rgba(255,255,255,.45);font-weight:700;margin:14px 0 4px;text-transform:uppercase;}
+  .hitem{
+    display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:12.5px;cursor:pointer;
+    border-radius:6px;
+  }
+  .hitem:hover{background:rgba(255,255,255,.06);}
+  .hitem input{accent-color:#8FD3C9;width:14px;height:14px;flex-shrink:0;}
+  .hitem.hidden{display:none;}
+  .hitem .mine{color:#F6B375;font-weight:700;}
+
+  .keybox{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15);}
+  .keybox label{font-size:11px;color:rgba(255,255,255,.6);display:block;margin-bottom:6px;}
+  .keybox .krow{display:flex;gap:6px;}
+  .keybox input{flex:1;}
+  .keybox .clr{background:var(--brick);border:none;color:#fff;border-radius:6px;padding:0 10px;font-size:11px;cursor:pointer;}
+
+  .runbtn{
+    width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;
+    padding:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:14px;
+  }
+  .runbtn:disabled{background:rgba(255,255,255,.15);}
+
+  /* ---------- 메인 ---------- */
+  .main{flex:1;padding:32px 28px 80px;min-width:0;}
+  .main .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:6px;}
+  .main h2{font-family:'Noto Serif KR',serif;font-size:20px;margin:0;}
+  .main .src{font-size:11px;color:var(--ink-soft);}
+  .status{font-size:13px;color:var(--ink-soft);margin:10px 0 18px;min-height:18px;}
+  .status.error{color:var(--brick);}
+  .progress-track{background:var(--line-soft);border-radius:6px;height:8px;overflow:hidden;margin-bottom:18px;display:none;}
+  .progress-fill{height:100%;background:var(--accent);width:0%;transition:width .2s;}
+
+  .results{display:none;flex-direction:column;gap:14px;}
+  .metric-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;}
+  .metric-card .mhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+  .metric-card .mtitle{font-weight:700;font-size:14px;}
+  .metric-card .munit{font-size:11px;color:var(--ink-soft);}
+  .bar-row{display:grid;grid-template-columns:130px 1fr 54px;align-items:center;gap:10px;padding:5px 0;font-size:12.5px;}
+  .bar-row .name{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-row .name.me{color:var(--brick);font-weight:700;}
+  .bar-track{background:var(--line-soft);border-radius:5px;height:14px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--accent);border-radius:5px 0 0 5px;transition:width .4s ease;}
+  .bar-fill.me{background:var(--brick);}
+  .bar-fill.rank1{background:var(--gold);}
+  .bar-row .val{text-align:right;font-weight:700;font-size:12px;}
+
+  .grade-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line-soft);font-size:12.5px;}
+  .grade-row:last-child{border-bottom:none;}
+  .grade-badge{background:var(--gold-soft);color:var(--gold);font-weight:800;font-size:12.5px;padding:2px 11px;border-radius:20px;min-width:34px;text-align:center;}
+
+  .exportbtn{background:#217346;color:#fff;border:none;border-radius:8px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;display:none;}
+  .viewtoggle{display:flex;gap:8px;margin-bottom:16px;}
+  .viewtoggle button{border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);border-radius:20px;padding:7px 16px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .viewtoggle button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .group-section{}
+  .group-title{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .empty-hint{text-align:center;color:#9AA3A0;font-size:14px;padding:60px 20px;border:2px dashed var(--line);border-radius:12px;}
+
+
+  .server-state{background:rgba(255,255,255,.08);border-radius:8px;padding:9px 11px;font-size:12px;line-height:1.45;}
+  .server-state.checking{color:#D5DEDC}.server-state.ok{color:#8FD3C9}.server-state.warn{color:#F4CF88}.server-state.bad{color:#FF9D8B}
+  .preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+  .preset-grid button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:6px;padding:7px 5px;font-size:10.5px;cursor:pointer;font-family:inherit;}
+  .cache-dot{margin-left:auto;font-size:10px}.cache-dot.fresh{color:#8FD3C9}.cache-dot.mid{color:#F4CF88}.cache-dot.old{color:#FF9D8B}
+  .data-stamp{font-size:11.5px;color:var(--ink-soft);margin:-8px 0 15px;min-height:16px}.data-stamp .old-data{color:var(--brick);font-weight:700}
+  .benchmark-card,.ratio-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 5px 18px rgba(20,33,61,.035)}
+  .benchmark-card.notice{font-size:13px;color:var(--ink-soft);border-left:4px solid var(--accent);}
+  .benchmark-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px;flex-wrap:wrap}.bench-eyebrow{font-size:10.5px;letter-spacing:.12em;color:var(--accent);font-weight:800}.benchmark-head h3{font-family:'Noto Serif KR',serif;margin:3px 0 0;font-size:19px}.bench-chips{display:flex;gap:6px;flex-wrap:wrap}.bench-chips span{font-size:10.5px;background:var(--accent-soft);color:var(--accent);padding:4px 9px;border-radius:20px;font-weight:700}
+  .benchmark-table-wrap{overflow-x:auto}.benchmark-table{width:100%;border-collapse:collapse;font-size:12px;min-width:760px}.benchmark-table th{background:var(--paper);color:var(--ink-soft);font-size:10.5px;padding:8px 9px;border-bottom:1px solid var(--line);text-align:right}.benchmark-table th:first-child,.benchmark-table td:first-child{text-align:left}.benchmark-table td{padding:9px;border-bottom:1px solid var(--line-soft);text-align:right}.benchmark-table .strong{font-weight:800;color:var(--brick)}.benchmark-foot{margin-top:10px;font-size:10.5px;color:#7B8581}
+  .ratio-title{font-size:14px;font-weight:800;margin-bottom:12px}.ratio-title span{font-size:10.5px;font-weight:500;color:var(--ink-soft);margin-left:6px}.ratio-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:8px}.ratio-item{background:var(--paper);border-radius:10px;padding:13px}.ratio-label{font-size:10.5px;color:var(--ink-soft);margin-bottom:4px}.ratio-value{font-size:20px;font-weight:800}.ratio-value small{font-size:10.5px;margin-left:3px;color:var(--ink-soft)}.ratio-sub{font-size:10px;color:#7B8581;margin-top:3px}.ratio-empty{font-size:12px;color:var(--ink-soft);padding:8px 0}
+  .quality-alert,.quality-ok{font-size:11.5px;border-radius:9px;padding:9px 12px}.quality-alert{background:#FFF3EF;color:#A33D2A;border:1px solid #F3D5CD}.quality-ok{background:var(--accent-soft);color:var(--accent);border:1px solid #CFE1DF}
+  .data-error{color:var(--brick);font-weight:700;font-size:10.5px}.data-missing{color:#99A29F}.tiny-unit{font-size:9px;color:var(--ink-soft);font-weight:500}.bar-track.na{background:repeating-linear-gradient(135deg,var(--line-soft),var(--line-soft) 4px,#F7F8F7 4px,#F7F8F7 8px)}
+  .bar-row{grid-template-columns:150px 1fr 78px}.group-note,.minor-note{font-size:11.5px;color:var(--ink-soft);margin:-4px 0 10px}.group-body{display:flex;flex-direction:column;gap:12px}.collapsed-group{background:transparent}.group-title.collapsible{cursor:pointer;list-style:none;display:flex;justify-content:space-between}.group-title.collapsible::-webkit-details-marker{display:none}.group-title.collapsible span{font-family:'Pretendard';font-size:10.5px;color:var(--ink-soft);font-weight:500}
+  .grade-values{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.current-label{font-size:9px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px}.grade-badge.current{background:var(--accent-soft);color:var(--accent)}.grade-badge.old{background:var(--paper);color:var(--ink-soft);font-weight:600}.grade-note{font-size:9.5px;color:var(--ink-soft)}.grade-divider{color:var(--line)}.mine-name{color:var(--brick)!important;font-weight:800!important}
+  .table-card{overflow-x:auto}.metric-table{width:100%;border-collapse:collapse;font-size:12px}.metric-table th{border-bottom:2px solid var(--line);padding:8px 10px;text-align:right}.metric-table th:first-child{text-align:left}.metric-table td{border-bottom:1px solid var(--line-soft)}.numcell{text-align:right;padding:8px 10px}.hospital-cell{padding:8px 10px;font-weight:500;white-space:nowrap}.mine-row{background:var(--brick-soft)}.mine-row .hospital-cell{color:var(--brick);font-weight:800}
+  .detail-item{padding:10px 0;border-bottom:1px dashed var(--line-soft)}.detail-name{font-weight:600;margin-bottom:6px}.detail-name span,.detail-item summary span{font-weight:400;color:var(--ink-soft);font-size:11px}.detail-item summary{cursor:pointer;font-weight:600}.detail-body{margin-top:6px;font-size:12px;color:var(--ink-soft)}.job-chip{display:inline-block;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:2px 10px;margin:2px 4px 2px 0;font-size:11px}
+
+  @media (max-width: 820px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;height:auto;position:relative;max-height:60vh;}
+    .main{padding:20px 14px 60px;}
+    .ratio-grid{grid-template-columns:repeat(2,1fr);}
+    .bar-row{grid-template-columns:112px 1fr 68px;gap:7px;}
   }
 </style>
 </head>
 <body>
+<div class="app">
 
-<div id="siteGate">
-  <div class="box">
-    <h2>내가먹는약 안내 현황</h2>
-    <p style="color:var(--muted);font-size:13px;margin:4px 0 0;">비밀번호 4자리를 그냥 입력하세요 (클릭 불필요)</p>
-    <div class="pin-display" id="siteGatePinDisplay"><span></span><span></span><span></span><span></span></div>
-    <div class="err" id="siteGateErr"></div>
+  <div class="sidebar">
+    <div class="eyebrow">HIRA OPEN API</div>
+    <div class="versionbadge" id="versionBadge">v3.16</div>
+    <h1>상급종합병원 47</h1>
+
+    <div class="keybox" style="border-top:none;margin-top:0;padding-top:0;">
+      <label>① 서버 연결 상태</label>
+      <div id="serverStatus" class="server-state checking">⏳ Apps Script 프록시 연결 확인 중…</div>
+    </div>
+
+    <div class="keybox">
+      <label>⚡ 속도 (동시 처리 병원 수): <span id="concLabel">8</span>곳</label>
+      <input type="range" id="concSlider" min="1" max="15" value="8"
+        oninput="CONCURRENCY = Number(this.value); document.getElementById('concLabel').textContent = this.value;"
+        style="width:100%;accent-color:#8FD3C9;">
+      <div style="font-size:10.5px;color:rgba(255,255,255,.45);margin-top:4px;">실패한 병원은 속도를 자동으로 낮춰 다시 시도합니다. 직접 안 만지셔도 됩니다.</div>
+    </div>
+    <button class="runbtn" id="runBtn" onclick="runCompare()">② 선택 병원 비교 시작</button>
+    <button class="runbtn" style="background:transparent;border:1px solid rgba(255,255,255,.25);margin-top:6px;font-size:11px;padding:8px;" onclick="tryLoadCache()">이전 캐시 불러오기</button>
+    <button class="runbtn" style="background:transparent;border:1px solid rgba(255,255,255,.25);margin-top:6px;font-size:11px;padding:8px;" onclick="clearCache()">저장된 캐시 지우기</button>
+
+    <div style="margin:18px 0 8px;font-size:11px;color:rgba(255,255,255,.5);">③ 비교할 병원 선택</div>
+    <input type="text" id="filterInput" placeholder="병원명 검색…" oninput="filterList()">
+    <div class="preset-grid">
+      <button onclick="selectPreset('all')">전체 47개</button>
+      <button onclick="selectPreset('region')">경기남부권</button>
+      <button onclick="selectPreset('default')">기본 비교 4곳</button>
+      <button onclick="selectAll(false)">전체해제</button>
+    </div>
+    <div id="hospListBox"></div>
   </div>
+
+  <div class="main">
+    <div class="top">
+      <h2>인프라 비교 결과 <span id="mainVersion" style="font-family:'Pretendard';font-size:13px;background:var(--brick-soft);color:var(--brick);padding:3px 10px;border-radius:20px;vertical-align:middle;">v3.16</span></h2>
+      <div class="src">병원정보서비스 · 의료기관별상세정보서비스</div>
+    </div>
+    <div class="status" id="status"></div>
+    <div id="dataStamp" class="data-stamp"></div>
+    <div id="elapsedTime" style="display:none;font-size:12px;color:var(--accent);font-weight:600;margin:-6px 0 10px;"></div>
+    <div class="progress-track" id="progTrack"><div class="progress-fill" id="progFill"></div></div>
+    <div class="viewtoggle" id="viewToggle" style="display:none;">
+      <button id="viewGraphBtn" class="on" onclick="setViewMode('graph')">📊 그래프형</button>
+      <button id="viewTableBtn" onclick="setViewMode('table')">🗂 표형</button>
+    </div>
+
+    <div id="emptyHint" class="empty-hint">왼쪽에서 병원을 선택하고 [비교 시작]을 눌러주세요.</div>
+    <div class="results" id="results"></div>
+    <button class="exportbtn" id="exportBtn" onclick="exportExcel()">📊 엑셀로 다운로드</button>
+  </div>
+
 </div>
 
-<header class="no-print">
-  <h1>한림대학교성심병원 입원 환자 자가약 조회프로그램 안내 현황</h1>
-  <nav>
-    <button data-view="entry" class="active">부서 입력</button>
-    <button data-view="summary">종합</button>
-    <button data-view="stats">통계</button>
-    <button data-view="master">마스터</button>
-  </nav>
-</header>
-
-<main>
-  <!-- ===== 1) 부서 입력 화면 (v2: 전체 부서 표 방식) ===== -->
-  <section id="view-entry" class="view active">
-    <div id="configWarning" class="card" style="display:none;border-color:#d6455d;background:#fdeaec;">
-      <b>⚠️ 설정 필요:</b> index.html의 <code>SCRIPT_URL</code>이 아직 Apps Script 배포 URL로 교체되지 않았습니다. 화면이 비어있거나 저장이 안 되는 건 대부분 이 설정 때문입니다.
-    </div>
-    <div class="card">
-      <div class="stat-toolbar">
-        <div>
-          <label>조회할 날짜</label>
-          <input type="text" id="entryDate" placeholder="날짜 선택">
-        </div>
-        <div id="entryDateBadge" style="margin-left:auto;font-size:13px;color:var(--muted);"></div>
-      </div>
-      <p style="font-size:12.5px;color:var(--muted);background:#f4f6fb;border-radius:6px;padding:8px 10px;margin:0 0 12px;">
-        💡 잘못 입력하셨나요? 오늘 데이터는 모든 칸을 <b>0</b>으로 바꾸고 저장을 누르면 그대로 지워집니다.<br>
-        🕛 지난 날짜도 자유롭게 수정 가능합니다 (자동으로 잠기지 않습니다). 마스터가 특정 날짜를 마감 처리(잠금)한 경우에만 수정이 막히며, 그때는 마스터에게 잠금 해제를 요청하세요.
-      </p>
-      <div style="overflow:auto;max-height:85vh;border:1px solid var(--line);border-radius:8px;">
-        <table class="heat" id="entryTable">
-          <thead>
-            <tr>
-              <th rowspan="2">부서</th>
-              <th colspan="6" class="am-head">오전</th>
-              <th colspan="6" class="pm-head">오후</th>
-              <th rowspan="2">조회<br>합계</th>
-              <th rowspan="2">미조회<br>합계</th>
-              <th rowspan="2">작성자</th>
-              <th rowspan="2">최종저장</th>
-              <th rowspan="2" class="no-print">저장</th>
-            </tr>
-            <tr>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>카톡미사용</th><th>계</th>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>카톡미사용</th><th>계</th>
-            </tr>
-          </thead>
-          <tbody id="entryTbody">
-            <tr><td colspan="17">불러오는 중...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="entryMsg"></div>
-    </div>
-  </section>
-
-  <!-- ===== 2) 종합 화면 (엑셀 원본 레이아웃, 읽기전용, 인쇄용) ===== -->
-  <section id="view-summary" class="view">
-    <div class="card">
-      <div class="stat-toolbar">
-        <div><label>시작일</label><input type="text" id="summaryFrom" placeholder="시작일"></div>
-        <div><label>종료일</label><input type="text" id="summaryTo" placeholder="종료일"></div>
-        <div style="align-self:end;"><button class="btn no-print" id="summarySearchBtn">조회</button></div>
-        <button class="btn secondary no-print" id="summaryPrintBtn" style="margin-left:auto;">인쇄 / PDF</button>
-      </div>
-      <div id="summaryContent"></div>
-    </div>
-  </section>
-
-  <!-- ===== 3) 통계/대시보드 화면 ===== -->
-  <section id="view-stats" class="view">
-    <div class="card">
-      <div class="stat-toolbar">
-        <div><label>시작일</label><input type="text" id="statFrom" placeholder="시작일"></div>
-        <div><label>종료일</label><input type="text" id="statTo" placeholder="종료일"></div>
-        <div style="align-self:end;"><button class="btn no-print" id="statSearchBtn">조회</button></div>
-        <button class="btn secondary no-print" id="printBtn" style="margin-left:auto;">인쇄 / PDF</button>
-      </div>
-      <h2>부서별 현황 (선택 기간 합계)</h2>
-      <div id="heatTableWrap">데이터를 불러오는 중...</div>
-    </div>
-
-    <div class="card">
-      <h2>시간대별 비교 (오전 vs 오후, 선택 기간)</h2>
-      <div class="chart-wrap"><canvas id="chartAmPm"></canvas></div>
-    </div>
-
-    <div class="card">
-      <h2>요일별 분석 (선택 기간 내 요일별 평균 미조회율)</h2>
-      <div class="chart-wrap"><canvas id="chartWeekday"></canvas></div>
-    </div>
-
-    <div class="card">
-      <h2>월별 통계 (선택 기간)</h2>
-      <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
-    </div>
-  </section>
-
-  <!-- ===== 3) 마스터 화면 ===== -->
-  <section id="view-master" class="view">
-    <div id="masterLoginBox" class="card">
-      <h2 style="text-align:center;">마스터 로그인</h2>
-      <p style="color:var(--muted);font-size:13px;text-align:center;margin:0;">비밀번호 4자리를 그냥 입력하세요 (클릭 불필요)</p>
-      <div class="pin-display" id="masterPinDisplay"><span></span><span></span><span></span><span></span></div>
-      <div id="masterLoginMsg" style="text-align:center;"></div>
-    </div>
-
-    <div id="masterPanel" style="display:none;">
-      <div class="card">
-        <h2>오늘 부서별 입력 현황</h2>
-        <div class="status-grid" id="statusGrid"></div>
-      </div>
-
-      <div class="card">
-        <h2>날짜 잠금 관리</h2>
-        <p style="color:var(--muted);font-size:13px;margin-top:-6px;">기본적으로 모든 날짜는 잠겨있지 않아 자유롭게 수정할 수 있습니다. 마감이 확정된 날짜만 여기서 잠가두면, 부서 입력화면에서 그 날짜는 수정이 막힙니다.</p>
-        <div class="grid2">
-          <div class="field"><label>날짜</label><input type="text" id="lockDate" placeholder="날짜 선택"></div>
-          <div style="align-self:end;font-size:13px;color:var(--muted);" id="lockStatusDisplay"></div>
-        </div>
-        <div class="grid2">
-          <button class="btn danger" id="lockDateBtn">이 날짜 잠그기</button>
-          <button class="btn secondary" id="unlockDateBtn">이 날짜 잠금 해제</button>
-        </div>
-        <div id="lockMsg"></div>
-      </div>
-
-      <div class="card">
-        <h2>부서 목록 관리</h2>
-        <div class="grid2">
-          <div class="field"><label>부서 추가</label><input type="text" id="newDeptName" placeholder="새 부서명"></div>
-          <div style="align-self:end;"><button class="btn secondary" id="addDeptBtn" style="width:100%;">추가</button></div>
-        </div>
-        <div class="grid2">
-          <div class="field"><label>부서 삭제(사용중지)</label><select id="removeDeptSelect"></select></div>
-          <div style="align-self:end;"><button class="btn danger" id="removeDeptBtn" style="width:100%;">삭제</button></div>
-        </div>
-        <div id="deptMgmtMsg"></div>
-      </div>
-
-      <div class="card">
-        <h2>엑셀로 과거 데이터 가져오기</h2>
-        <p style="color:var(--muted);font-size:13px;margin-top:-6px;">엑셀 파일 하나 = 특정 하루치 데이터로 간주합니다. 날짜를 먼저 지정하고 파일을 읽으면, 기존 데이터와 비교해서 미리 보여드립니다. 확인하신 항목만 실제로 반영됩니다.</p>
-        <div class="grid2">
-          <div class="field"><label>이 파일의 날짜</label><input type="text" id="importDate" placeholder="날짜 선택"></div>
-          <div class="field"><label>엑셀 파일</label><input type="file" id="importFile" accept=".xlsx,.xls"></div>
-        </div>
-        <button class="btn secondary" id="importParseBtn">파일 읽고 비교하기</button>
-        <div id="importMsg"></div>
-        <div id="importPreviewWrap" style="display:none;margin-top:14px;overflow-x:auto;">
-          <table class="heat" id="importPreviewTable">
-            <thead><tr>
-              <th></th><th>부서</th><th>시간대</th>
-              <th>조회</th><th>인증서無</th><th>비번분실</th><th>거부</th><th>기타</th><th>카톡미사용</th><th>계</th>
-              <th>상태</th>
-            </tr></thead>
-            <tbody id="importPreviewBody"></tbody>
-          </table>
-          <p style="color:var(--muted);font-size:12px;margin-top:6px;">값이 다른 칸은 <b>기존값 → 엑셀값</b> 형태로 빨간색으로 표시됩니다.</p>
-          <button class="btn" id="importConfirmBtn" style="width:100%;margin-top:12px;">체크된 항목 반영하기</button>
-        </div>
-      </div>
-
-      <div class="card" style="border-color:var(--red);">
-        <h2 style="color:var(--red);">⚠️ 위험 구역 — 날짜 전체 삭제</h2>
-        <p style="color:var(--muted);font-size:13px;margin-top:-6px;">지정한 날짜의 모든 부서·시간대 데이터를 통째로 삭제합니다. 되돌릴 수 없으니 신중하게 사용하세요.</p>
-        <div class="grid2">
-          <div class="field"><label>삭제할 날짜</label><input type="text" id="deleteDate" placeholder="날짜 선택"></div>
-          <div style="align-self:end;"><button class="btn danger" id="deleteDateBtn" style="width:100%;">이 날짜 전체 삭제</button></div>
-        </div>
-        <div id="deleteDateMsg"></div>
-      </div>
-
-    </div>
-  </section>
-</main>
-
-<!-- 제출 확인 모달 -->
-
-
 <script>
-/* =========================================================
-   ⚠️ 배포 전 필수 설정: Apps Script 웹앱 배포 후 발급되는 URL을 아래에 입력하세요.
-   예) const SCRIPT_URL = "https://script.google.com/macros/s/AKfyc.../exec";
-========================================================= */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdIB9hSTnNAdLoxNlf9bkigbnKcwRxgoWTVP2NC9UcSGamfBoH1AOuzzSIESBdEFbr/exec";
+const APP_VERSION = "3.16";
+const MY_HOSPITAL = "한림대학교성심병원";
+const MY_REGION = "경기남부권";
+const PROXY_URL = "https://script.google.com/macros/s/AKfycbyhyoMXpqhexIxlhkUv64ucPmP8-N2AMl5sb4zrj3-m6Ufdh3tYjxWLhW0JMvslOcFVdQ/exec";
 
-async function callApi(action, payload) {
-  try {
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight 회피
-      body: JSON.stringify({ action, ...payload })
-    });
-    return await res.json();
-  } catch (err) {
-    return { ok: false, error: 'API 연결 실패 (SCRIPT_URL 설정을 확인하세요): ' + err };
-  }
+// 제5기(2024~2026) 상급종합병원 47개소 — [검색용 병원명, 권역]
+const HOSPITALS = [
+  ["한림대학교성심병원","경기남부권"],
+  ["강북삼성병원","서울권"],["건국대학교병원","서울권"],["경희대학교병원","서울권"],
+  ["고려대학교구로병원","서울권"],["삼성서울병원","서울권"],["서울대학교병원","서울권"],
+  ["강남세브란스병원","서울권"],["세브란스병원","서울권"],["이화여자대학교부속목동병원","서울권"],
+  ["서울아산병원","서울권"],["중앙대학교병원","서울권"],["고려대학교안암병원","서울권"],
+  ["가톨릭대학교서울성모병원","서울권"],["한양대학교병원","서울권"],
+  ["가톨릭대학교인천성모병원","경기서북부권"],["가천대학교길병원","경기서북부권"],
+  ["인하대학교병원","경기서북부권"],["순천향대학교부속부천병원","경기서북부권"],
+  ["가톨릭대학교성빈센트병원","경기남부권"],["고려대학교안산병원","경기남부권"],
+  ["분당서울대학교병원","경기남부권"],["아주대학교병원","경기남부권"],
+  ["강릉아산병원","강원권"],["연세대학교원주세브란스기독병원","강원권"],
+  ["충북대학교병원","충청권"],["건양대학교병원","충청권"],["충남대학교병원","충청권"],
+  ["단국대학교병원","충청권"],
+  ["원광대학교병원","호남제주권"],["전북대학교병원","호남제주권"],
+  ["전남대학교병원","호남제주권"],["조선대학교병원","호남제주권"],["화순전남대학교병원","호남제주권"],
+  ["경북대학교병원","영남권"],["계명대학교동산병원","영남권"],["대구가톨릭대학교병원","영남권"],
+  ["영남대학교병원","영남권"],["칠곡경북대학교병원","영남권"],
+  ["고신대학교복음병원","영남권"],["동아대학교병원","영남권"],["부산대학교병원","영남권"],
+  ["양산부산대학교병원","영남권"],["인제대학교부산백병원","영남권"],["울산대학교병원","영남권"],
+  ["경상국립대학교병원","영남권"],["성균관대학교삼성창원병원","영남권"],
+];
+
+const HOSPITAL_REGION = Object.fromEntries(HOSPITALS);
+const BASIS_PATH = "B551182/hospInfoServicev2/getHospBasisList";
+const DETAIL_BASE_PATH = "B551182/MadmDtlInfoService2.8";
+let CONCURRENCY = 8;
+let viewMode = "graph";
+let selected = new Set([MY_HOSPITAL,"서울대학교병원","삼성서울병원","서울아산병원"]);
+let collected = [];
+
+// 상세 API가 병원 단위 Promise.all로 폭주하지 않도록 전체 요청 수도 제한
+const MAX_API_INFLIGHT = 16;
+const CACHE_SCHEMA = 2; // v3.15 이전 캐시는 0/미조회 구분이 없어 재사용하지 않음
+let apiInflight = 0;
+const apiWaiters = [];
+async function acquireApiSlot(){
+  if(apiInflight < MAX_API_INFLIGHT){ apiInflight++; return; }
+  await new Promise(resolve => apiWaiters.push(resolve));
+  apiInflight++;
+}
+function releaseApiSlot(){
+  apiInflight = Math.max(0, apiInflight - 1);
+  const next = apiWaiters.shift();
+  if(next) next();
 }
 
-/* ---------- 공통: 탭 전환 ---------- */
-document.querySelectorAll('nav button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('view-' + btn.dataset.view).classList.add('active');
-    if (btn.dataset.view === 'stats') loadStatsView();
-    if (btn.dataset.view === 'summary') loadSummaryView();
-  });
-});
-
-/* ---------- 사이트 접속 비밀번호 게이트 (클릭 없이 바로 키보드 입력) ---------- */
-const SITE_PW = "4114"; // 사이트 접속 비밀번호 (마스터 관리자 비밀번호와 별개)
-const SITE_UNLOCK_KEY = 'siteUnlocked_v2'; // 이전 테스트 때 저장된 값과 충돌 방지용 (버전 바뀔 때마다 키 변경 가능)
-
-function renderPin(displayEl, pin) {
-  const spans = displayEl.querySelectorAll('span');
-  spans.forEach((s, i) => s.classList.toggle('filled', i < pin.length));
+const isNum = v => typeof v === "number" && Number.isFinite(v);
+const numOrNull = v => (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) ? null : Number(v);
+function sumKnown(values){
+  const nums = values.map(numOrNull).filter(v=>v!==null);
+  return nums.length ? nums.reduce((a,b)=>a+b,0) : null;
+}
+function fmtDateTime(iso){
+  if(!iso) return "";
+  const d = new Date(iso);
+  if(Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("ko-KR", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).format(d);
+}
+function cacheFreshness(ts){
+  if(!ts) return {cls:"", label:""};
+  const age = Date.now() - new Date(ts).getTime();
+  if(age <= 86400000) return {cls:"fresh", label:"24시간 이내"};
+  if(age <= 7*86400000) return {cls:"mid", label:"7일 이내"};
+  return {cls:"old", label:"7일 초과"};
 }
 
-let sitePin = '';
-function checkSiteGate() {
-  if (localStorage.getItem(SITE_UNLOCK_KEY) === '1') {
-    document.getElementById('siteGate').style.display = 'none';
-  }
+// ---- 로컬 캐시 ----
+function saveCache(data){
+  try{
+    const stamped = { ...data, cacheSchema:CACHE_SCHEMA, ts: data.ts || new Date().toISOString() };
+    localStorage.setItem(`infra_${data.name}`, JSON.stringify(stamped));
+  }catch(e){ /* 저장소 접근 불가 */ }
 }
-document.addEventListener('keydown', (e) => {
-  const gateVisible = document.getElementById('siteGate').style.display !== 'none';
-  if (!gateVisible) return;
-  if (e.key >= '0' && e.key <= '9') {
-    if (sitePin.length >= 4) return;
-    sitePin += e.key;
-    renderPin(document.getElementById('siteGatePinDisplay'), sitePin);
-    if (sitePin.length === 4) trySiteGate();
-  } else if (e.key === 'Backspace') {
-    sitePin = sitePin.slice(0, -1);
-    renderPin(document.getElementById('siteGatePinDisplay'), sitePin);
-  }
-});
-function trySiteGate() {
-  if (sitePin === SITE_PW) {
-    localStorage.setItem(SITE_UNLOCK_KEY, '1');
-    document.getElementById('siteGate').style.display = 'none';
-  } else {
-    document.getElementById('siteGateErr').textContent = '비밀번호가 올바르지 않습니다.';
-    sitePin = '';
-    setTimeout(() => renderPin(document.getElementById('siteGatePinDisplay'), sitePin), 200);
-  }
+function loadCache(name){
+  try{
+    const raw = localStorage.getItem(`infra_${name}`);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed.cacheSchema === CACHE_SCHEMA ? parsed : null;
+  }catch(e){ return null; }
 }
-checkSiteGate();
-
-const todayStr = new Date().toISOString().slice(0,10);
-
-if (SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
-  document.getElementById('configWarning').style.display = 'block';
+function clearCache(){
+  try{
+    HOSPITALS.forEach(([name])=> localStorage.removeItem(`infra_${name}`));
+    renderList();
+    statusMsg("저장된 캐시를 모두 지웠습니다.");
+  }catch(e){ statusMsg("이 화면에서는 캐시 저장소를 사용할 수 없습니다.", true); }
 }
 
-/* ---------- 1) 부서 입력 화면 (v2: 전체 부서 표) ---------- */
-let departments = [];
-let entryPicker;
-
-/* ---------- 달력에 데이터 있는 날짜 점 표시 (공용) ---------- */
-let datesWithData = new Set();
-function ymdOf(date) {
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-}
-function onDayCreateDots(dObj, dStr, fp, dayElem) {
-  if (datesWithData.has(ymdOf(dayElem.dateObj))) {
-    const dot = document.createElement('span');
-    dot.className = 'fp-dot';
-    dayElem.appendChild(dot);
-  }
-}
-async function loadDatesWithData() {
-  const to = todayStr;
-  const from = new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0,10);
-  const res = await callApi('getStats', { from, to });
-  if (res.ok) {
-    res.rows.forEach(r => { if ((Number(r.total)||0) > 0) datesWithData.add(r.date); });
-    [entryPicker, summaryFromPicker, summaryToPicker, statFromPicker, statToPicker].forEach(p => { if (p) p.redraw(); });
-  }
-}
-
-async function loadDepartmentsList() {
-  const res = await callApi('getDepartments', {});
-  if (res.ok) departments = res.departments;
-  populateMasterDeptSelects();
-}
-
-function initEntryDatePicker() {
-  entryPicker = flatpickr('#entryDate', {
-    locale: 'ko',
-    defaultDate: todayStr,
-    maxDate: todayStr,
-    onDayCreate: onDayCreateDots,
-    onChange: (sel, dateStr) => loadEntryTable(dateStr)
-  });
-}
-
-function formatTs(v) {
-  if (!v) return '-';
-  const d = new Date(v);
-  if (isNaN(d.getTime())) return String(v);
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-function latestOf(a, b) {
-  const da = a ? new Date(a) : null, db = b ? new Date(b) : null;
-  const aValid = da && !isNaN(da.getTime()), bValid = db && !isNaN(db.getTime());
-  if (aValid && bValid) return da > db ? a : b;
-  return a || b || '';
-}
-
-async function loadEntryTable(date) {
-  date = date || todayStr;
-  const tbody = document.getElementById('entryTbody');
-  tbody.innerHTML = '<tr><td colspan="17">불러오는 중...</td></tr>';
-  const res = await callApi('getDayEntries', { date });
-  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="17" style="color:#d6455d;">오류: ${res.error}</td></tr>`; return; }
-
-  const badge = document.getElementById('entryDateBadge');
-  badge.textContent = res.locked ? '🔒 마스터가 잠근 날짜 – 수정 불가' : '자유롭게 수정 가능';
-
-  const byDept = {};
-  res.rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
-
-  tbody.innerHTML = '';
-  Object.keys(byDept).forEach(dept => {
-    const am = byDept[dept]['오전'], pm = byDept[dept]['오후'];
-    const writer = (am && am.writer) || (pm && pm.writer) || '';
-    const bothLocked = (!am || am.locked) && (!pm || pm.locked);
-    const lastSaved = latestOf(am && am.updatedAt, pm && pm.updatedAt);
-    const tr = document.createElement('tr');
-    tr.dataset.dept = dept;
-    tr.innerHTML = `<td style="font-weight:600;">${dept}</td>`
-      + ampmCells(dept, '오전', am)
-      + ampmCells(dept, '오후', pm)
-      + `<td class="joh-sum" style="font-weight:700;">0</td>`
-      + `<td class="miss-sum" style="font-weight:700;">0</td>`
-      + `<td><input type="text" data-role="writer" value="${writer}" ${bothLocked?'disabled':''} style="width:70px;"></td>`
-      + `<td class="last-saved" style="font-size:12px;color:var(--muted);white-space:nowrap;">${formatTs(lastSaved)}</td>`
-      + `<td class="no-print"><button class="btn" data-role="rowSaveBtn" style="padding:6px 10px;font-size:13px;">저장</button></td>`;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll('input[data-role=field]').forEach(inp => {
-    inp.dataset.orig = inp.value; // 원래 불러온 값(변경 여부 판단용)
-    inp.addEventListener('input', () => {
-      const td = inp.closest('td');
-      td.dataset.touched = '1';
-      recalcRowTotal(inp);
-    });
-  });
-  tbody.querySelectorAll('input[data-role=writer]').forEach(inp => {
-    inp.dataset.orig = inp.value;
-    inp.addEventListener('input', () => { inp.dataset.touched = '1'; });
-  });
-  tbody.querySelectorAll('button[data-role=rowSaveBtn]').forEach(btn => {
-    btn.addEventListener('click', () => saveOneRow(btn.closest('tr'), date));
-  });
-  tbody.querySelectorAll('tr').forEach(tr => recalcRowTotal(tr.querySelector('input[data-role=field]')));
-}
-
-function ampmCells(dept, ampm, entry) {
-  const e = entry || { joh:0, mj_cert:0, mj_pw:0, mj_refuse:0, mj_kakao:0, locked:false };
-  const locked = e.locked;
-  const dis = locked ? 'disabled title="마감됨 - 마스터 잠금 해제 필요"' : '';
-  const total = (Number(e.joh)||0)+(Number(e.mj_cert)||0)+(Number(e.mj_pw)||0)+(Number(e.mj_refuse)||0)+(Number(e.mj_kakao)||0);
-  const d = `data-dept="${dept}" data-ampm="${ampm}" data-updated="${(e.updatedAt||'').toString().replace(/"/g,'&quot;')}"`;
-  return `
-    <td ${d}><input type="number" min="0" data-role="field" data-f="joh" value="${e.joh||0}" ${dis} style="width:52px;"></td>
-    <td ${d}><input type="number" min="0" data-role="field" data-f="mjCert" value="${e.mj_cert||0}" ${dis} style="width:52px;"></td>
-    <td ${d}><input type="number" min="0" data-role="field" data-f="mjPw" value="${e.mj_pw||0}" ${dis} style="width:52px;"></td>
-    <td ${d}><input type="number" min="0" data-role="field" data-f="mjRefuse" value="${e.mj_refuse||0}" ${dis} style="width:52px;"></td>
-    <td ${d}><input type="number" min="0" data-role="field" data-f="mjKakao" value="${e.mj_kakao||0}" ${dis} style="width:52px;"></td>
-    <td ${d} class="total-cell" style="font-weight:700;">${total}</td>
-  `;
-}
-
-function updateBlockTotal(row) {
-  let johSum = 0, missSum = 0;
-  ['오전','오후'].forEach(ampm => {
-    const dept = row.dataset.dept;
-    const cells = row.querySelectorAll(`td[data-dept="${dept}"][data-ampm="${ampm}"]`);
-    let sum = 0, joh = 0, totalCell = null;
-    cells.forEach(td => {
-      const inp = td.querySelector('input[data-role=field]');
-      if (inp) {
-        const v = Number(inp.value) || 0;
-        sum += v;
-        if (inp.dataset.f === 'joh') joh = v;
-      }
-      if (td.classList.contains('total-cell')) totalCell = td;
-    });
-    if (totalCell) totalCell.textContent = sum;
-    johSum += joh;
-    missSum += (sum - joh);
-  });
-  row.querySelector('.joh-sum').textContent = johSum;
-  row.querySelector('.miss-sum').textContent = missSum;
-}
-function recalcRowTotal(inp) {
-  if (!inp) return;
-  const row = inp.closest('tr');
-  if (row) updateBlockTotal(row);
-}
-
-/**
- * 실제로 값이 바뀐(touched) 항목만 골라서 저장 payload를 만듭니다 (부서 한 줄 대상).
- * 다른 부서 줄까지 훑지 않는 이유: 애초에 부서별 저장 버튼이라 그 줄만 대상이면 충분하고,
- * 혹시라도 안 건드린 칸까지 보내서 다른 값을 덮어쓰는 일이 없도록 하기 위함입니다.
- */
-function collectEntryPayload(tr) {
-  const rows = [];
-  const dept = tr.dataset.dept;
-  const writerInput = tr.querySelector('input[data-role=writer]');
-  const writerTouched = writerInput && writerInput.dataset.touched === '1';
-  ['오전','오후'].forEach(ampm => {
-    const cells = tr.querySelectorAll(`td[data-dept="${dept}"][data-ampm="${ampm}"]`);
-    const anyTouched = Array.from(cells).some(td => td.dataset.touched === '1');
-    if (!anyTouched && !writerTouched) return; // 이 블록은 안 건드렸으면 아예 전송하지 않음
-    const johInput = tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f=joh]`);
-    if (!johInput || johInput.disabled) return; // 잠긴 항목은 제외
-    const get = f => Number(tr.querySelector(`td[data-dept="${dept}"][data-ampm="${ampm}"] input[data-f="${f}"]`)?.value) || 0;
-    rows.push({ dept, ampm, joh: get('joh'), mjCert: get('mjCert'), mjPw: get('mjPw'), mjRefuse: get('mjRefuse'), mjEtc: 0, mjKakao: get('mjKakao'), writer: writerInput ? writerInput.value : '' });
-  });
-  return rows;
-}
-
-/** 부서 줄 옆의 "저장" 버튼: 그 부서 하나만 확인 없이 바로 저장 (스크롤/모달 불필요) */
-async function saveOneRow(tr, date) {
-  const dept = tr.dataset.dept;
-  const rows = collectEntryPayload(tr);
-  const btn = tr.querySelector('button[data-role=rowSaveBtn]');
-  const msg = document.getElementById('entryMsg');
-  if (!rows.length) {
-    msg.className = 'msg'; msg.style.background = '#eef2f8';
-    msg.textContent = `${dept}: 변경된 내용이 없어요.`;
-    return;
-  }
-  btn.disabled = true; btn.textContent = '저장 중';
-  const res = await callApi('submitBatch', { date, entries: rows });
-  msg.style.background = '';
-  if (res.ok) {
-    msg.className = 'msg ok';
-    msg.textContent = `✅ ${dept} 저장 완료 (${res.saved}건)` + (res.skipped && res.skipped.length ? ' / 마감된 날짜라 반영 안 된 항목이 있어요. 관리자에게 잠금 해제를 요청하세요.' : '');
-    // 눈에 확실히 보이는 성공 피드백: 버튼을 잠깐 초록색 체크로 바꾸고, 최종저장 시각도 바로 표시
-    btn.textContent = '✓ 완료';
-    btn.style.background = 'var(--green)';
-    tr.querySelector('.last-saved').textContent = formatTs(new Date().toISOString());
-    tr.style.transition = 'background 0.3s';
-    tr.style.background = '#e7f7ee';
-    setTimeout(() => {
-      btn.disabled = false; btn.textContent = '저장'; btn.style.background = '';
-      tr.style.background = '';
-      loadEntryTable(date); // 서버 기준 최신 데이터로 다시 정리 (다른 사람 변경분 포함)
-    }, 900);
-  } else {
-    btn.disabled = false; btn.textContent = '저장';
-    msg.className = 'msg err'; msg.textContent = `${dept} 저장 오류: ` + res.error;
-  }
-}
-
-
-/* ---------- 2) 종합 화면 (엑셀 원본 레이아웃, 읽기전용) ---------- */
-let summaryFromPicker, summaryToPicker;
-
-function initSummaryPicker() {
-  summaryFromPicker = flatpickr('#summaryFrom', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
-  summaryToPicker = flatpickr('#summaryTo', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
-}
-
-document.getElementById('summarySearchBtn').addEventListener('click', () => {
-  const from = summaryFromPicker.selectedDates[0] ? ymdOf(summaryFromPicker.selectedDates[0]) : todayStr;
-  const to = summaryToPicker.selectedDates[0] ? ymdOf(summaryToPicker.selectedDates[0]) : todayStr;
-  if (from > to) { alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
-  loadSummaryRange(from, to);
-});
-
-async function loadSummaryView() {
-  if (!summaryFromPicker) initSummaryPicker();
-  loadSummaryRange(todayStr, todayStr);
-}
-
-function summaryTableHtml(date, rows) {
-  const byDept = {};
-  rows.forEach(r => { if (!byDept[r.dept]) byDept[r.dept] = {}; byDept[r.dept][r.ampm] = r; });
-  const colSum = { joh:0, cert:0, pw:0, refuse:0, etc:0, kakao:0, total:0, grand:0 };
-  let body = '';
-  Object.keys(byDept).forEach(dept => {
-    const am = byDept[dept]['오전'] || {}, pm = byDept[dept]['오후'] || {};
-    const grandTotal = (Number(am.total)||0) + (Number(pm.total)||0);
-    const writerAm = (am.writer || '').trim(), writerPm = (pm.writer || '').trim();
-    let writerCombined;
-    if (writerAm && writerPm && writerAm !== writerPm) writerCombined = `오전:${writerAm} / 오후:${writerPm}`;
-    else writerCombined = writerAm || writerPm || '';
-
-    colSum.joh += (Number(am.joh)||0)+(Number(pm.joh)||0);
-    colSum.cert += (Number(am.mj_cert)||0)+(Number(pm.mj_cert)||0);
-    colSum.pw += (Number(am.mj_pw)||0)+(Number(pm.mj_pw)||0);
-    colSum.refuse += (Number(am.mj_refuse)||0)+(Number(pm.mj_refuse)||0);
-    colSum.etc += (Number(am.mj_etc)||0)+(Number(pm.mj_etc)||0);
-    colSum.kakao += (Number(am.mj_kakao)||0)+(Number(pm.mj_kakao)||0);
-    colSum.total += grandTotal;
-    colSum.grand += grandTotal;
-
-    ['오전','오후'].forEach((ampm, idx) => {
-      const e = byDept[dept][ampm] || {};
-      body += '<tr>';
-      if (idx === 0) body += `<td rowspan="2" style="font-weight:600;">${dept}</td>`;
-      body += `<td>${ampm}</td><td>${e.joh||0}</td><td>${e.mj_cert||0}</td><td>${e.mj_pw||0}</td><td>${e.mj_refuse||0}</td><td>${e.mj_etc||0}</td><td>${e.mj_kakao||0}</td><td>${e.total||0}</td>`;
-      if (idx === 0) {
-        body += `<td rowspan="2" style="font-weight:700;">${grandTotal}</td>`;
-        body += `<td rowspan="2">${writerCombined}</td>`;
-      }
-      body += '</tr>';
-    });
-  });
-  body += `<tr style="background:#eef2f8;font-weight:800;">
-      <td colspan="2">합계</td>
-      <td>${colSum.joh}</td><td>${colSum.cert}</td><td>${colSum.pw}</td><td>${colSum.refuse}</td><td>${colSum.etc}</td><td>${colSum.kakao}</td><td>${colSum.total}</td>
-      <td>${colSum.grand}</td><td></td>
-    </tr>`;
-  return `
-    <h2 style="margin-top:20px;">심평원 내가 먹는약 한눈에 서비스 안내 현황 (${date})</h2>
-    <table class="heat">
-      <thead><tr><th>부서</th><th>구분</th><th>조회</th><th>인증서無</th><th>비밀번호분실</th><th>안내거부</th><th>기타</th><th>카톡미사용</th><th>계</th><th>합계</th><th>작성자</th></tr></thead>
-      <tbody>${body || '<tr><td colspan="11">데이터가 없습니다.</td></tr>'}</tbody>
-    </table>
-    <div class="page-break"></div>
-  `;
-}
-
-function dateRangeList(from, to) {
-  const dates = [];
-  let d = new Date(from + 'T00:00:00');
-  const end = new Date(to + 'T00:00:00');
-  while (d <= end) { dates.push(ymdOf(d)); d.setDate(d.getDate() + 1); }
-  return dates;
-}
-
-async function loadSummaryRange(from, to) {
-  const container = document.getElementById('summaryContent');
-  container.innerHTML = '불러오는 중...';
-  const dates = dateRangeList(from, to);
-  const results = await Promise.all(dates.map(d => callApi('getDayEntries', { date: d })));
-  let html = '';
-  results.forEach((res, i) => {
-    if (res.ok) html += summaryTableHtml(dates[i], res.rows);
-  });
-  container.innerHTML = html || '<p>데이터가 없습니다.</p>';
-}
-
-document.getElementById('summaryPrintBtn').addEventListener('click', () => window.print());
-
-
-let statFromPicker, statToPicker;
-let statsCache = [];
-let charts = {};
-
-function initStatsPicker() {
-  statFromPicker = flatpickr('#statFrom', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
-  statToPicker = flatpickr('#statTo', { locale: 'ko', defaultDate: todayStr, maxDate: todayStr, onDayCreate: onDayCreateDots });
-}
-
-document.getElementById('statSearchBtn').addEventListener('click', () => {
-  const from = statFromPicker.selectedDates[0] ? ymdOf(statFromPicker.selectedDates[0]) : todayStr;
-  const to = statToPicker.selectedDates[0] ? ymdOf(statToPicker.selectedDates[0]) : todayStr;
-  if (from > to) { alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
-  loadStatsRange(from, to);
-});
-
-async function loadStatsView() {
-  if (!statFromPicker) initStatsPicker();
-  loadStatsRange(todayStr, todayStr);
-}
-
-async function loadStatsRange(from, to) {
-  const res = await callApi('getStats', { from, to });
-  if (res.ok) {
-    statsCache = res.rows;
-    renderHeatTable();
-    renderAmPmChart();
-    renderWeekdayChart();
-    renderMonthlyChart();
-  } else {
-    document.getElementById('heatTableWrap').innerHTML = `<p style="color:#d6455d;">오류: ${res.error}</p>`;
-  }
-}
-
-function renderHeatTable() {
-  const byDept = {};
-  statsCache.forEach(r => {
-    if (!byDept[r.dept]) byDept[r.dept] = { joh:0, total:0, ampm:{ '오전':{joh:0,total:0}, '오후':{joh:0,total:0} } };
-    byDept[r.dept].ampm[r.ampm].joh += Number(r.joh)||0;
-    byDept[r.dept].ampm[r.ampm].total += Number(r.total)||0;
-  });
-  let html = '<table class="heat"><tr><th>부서</th><th>오전 조회</th><th>오전 미조회</th><th>오후 조회</th><th>오후 미조회</th></tr>';
-  Object.keys(byDept).sort().forEach(dept => {
-    const am = byDept[dept].ampm['오전'], pm = byDept[dept].ampm['오후'];
-    const amMiss = am.total - am.joh, pmMiss = pm.total - pm.joh;
-    html += `<tr><td>${dept}</td><td>${am.joh}</td><td style="color:${amMiss>0?'#d6455d':'inherit'}">${amMiss}</td><td>${pm.joh}</td><td style="color:${pmMiss>0?'#d6455d':'inherit'}">${pmMiss}</td></tr>`;
-  });
-  html += '</table>';
-  if (Object.keys(byDept).length === 0) html = '<p style="color:#888;">해당 기간 데이터가 없습니다.</p>';
-  document.getElementById('heatTableWrap').innerHTML = html;
-}
-
-function destroyChart(key) { if (charts[key]) charts[key].destroy(); }
-
-function renderAmPmChart() {
-  const amRows = statsCache.filter(r => r.ampm === '오전');
-  const pmRows = statsCache.filter(r => r.ampm === '오후');
-  const sum = arr => arr.reduce((s,r)=>s+(Number(r.total)||0),0);
-  const sumJoh = arr => arr.reduce((s,r)=>s+(Number(r.joh)||0),0);
-  destroyChart('ampm');
-  charts.ampm = new Chart(document.getElementById('chartAmPm'), {
-    type: 'bar',
-    data: {
-      labels: ['오전','오후'],
-      datasets: [
-        { label: '조회', data: [sumJoh(amRows), sumJoh(pmRows)], backgroundColor: '#2e9e5b' },
-        { label: '미조회', data: [sum(amRows)-sumJoh(amRows), sum(pmRows)-sumJoh(pmRows)], backgroundColor: '#d6455d' }
-      ]
-    },
-    options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
-  });
-}
-
-function renderWeekdayChart() {
-  const wdNames = ['일','월','화','수','목','금','토'];
-  const buckets = Array.from({length:7}, () => ({joh:0,total:0}));
-  statsCache.forEach(r => {
-    const d = new Date(r.date);
-    const wd = d.getDay();
-    buckets[wd].joh += Number(r.joh)||0;
-    buckets[wd].total += Number(r.total)||0;
-  });
-  const rates = buckets.map(b => b.total ? Math.round((b.total-b.joh)/b.total*1000)/10 : 0);
-  destroyChart('weekday');
-  charts.weekday = new Chart(document.getElementById('chartWeekday'), {
-    type: 'bar',
-    data: { labels: wdNames, datasets: [{ label: '미조회율(%)', data: rates, backgroundColor: '#2e5484' }] },
-    options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
-  });
-}
-
-function renderMonthlyChart() {
-  const months = {};
-  statsCache.forEach(r => {
-    const m = r.date.slice(0,7);
-    if (!months[m]) months[m] = {joh:0,total:0};
-    months[m].joh += Number(r.joh)||0; months[m].total += Number(r.total)||0;
-  });
-  const keys = Object.keys(months).sort();
-  destroyChart('monthly');
-  charts.monthly = new Chart(document.getElementById('chartMonthly'), {
-    type: 'line',
-    data: {
-      labels: keys,
-      datasets: [
-        { label: '조회', data: keys.map(k=>months[k].joh), borderColor:'#2e9e5b', backgroundColor:'#2e9e5b', tension:.2 },
-        { label: '전체', data: keys.map(k=>months[k].total), borderColor:'#1b3a5c', backgroundColor:'#1b3a5c', tension:.2 }
-      ]
-    },
-    options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
-  });
-}
-
-document.getElementById('printBtn').addEventListener('click', () => window.print());
-
-/* ---------- 3) 마스터 화면 ---------- */
-let masterPw = '';
-let masterPin = '';
-
-document.addEventListener('keydown', (e) => {
-  const box = document.getElementById('masterLoginBox');
-  const masterViewActive = document.getElementById('view-master').classList.contains('active');
-  if (!masterViewActive || box.style.display === 'none') return;
-  if (e.key >= '0' && e.key <= '9') {
-    if (masterPin.length >= 4) return;
-    masterPin += e.key;
-    renderPin(document.getElementById('masterPinDisplay'), masterPin);
-    if (masterPin.length === 4) tryMasterLogin();
-  } else if (e.key === 'Backspace') {
-    masterPin = masterPin.slice(0, -1);
-    renderPin(document.getElementById('masterPinDisplay'), masterPin);
-  }
-});
-
-async function tryMasterLogin() {
-  const res = await callApi('masterLogin', { password: masterPin });
-  const msg = document.getElementById('masterLoginMsg');
-  if (res.ok) {
-    masterPw = masterPin;
-    document.getElementById('masterLoginBox').style.display = 'none';
-    document.getElementById('masterPanel').style.display = 'block';
-    loadMasterStatus();
-    initUnlockDatePicker();
-    initImportDatePicker();
-    initDeleteDatePicker();
-  } else {
-    msg.className = 'msg err'; msg.textContent = '비밀번호가 올바르지 않습니다.';
-    masterPin = '';
-    setTimeout(() => renderPin(document.getElementById('masterPinDisplay'), masterPin), 200);
-  }
-}
-
-async function loadMasterStatus() {
-  const res = await callApi('getTodayStatus', {});
-  if (!res.ok) return;
-  const grid = document.getElementById('statusGrid');
-  grid.innerHTML = '';
-  Object.keys(res.status).forEach(dept => {
-    const s = res.status[dept];
-    let cls = 'red', label = '미입력';
-    if (s.am && s.pm) { cls='green'; label='완료'; }
-    else if (s.am || s.pm) { cls='amber'; label = s.am ? '오전만' : '오후만'; }
-    const div = document.createElement('div');
-    div.className = 'status-item';
-    div.innerHTML = `<span class="dot ${cls}"></span>${dept} <div style="color:#888;margin-top:3px;">${label}</div>`;
-    grid.appendChild(div);
-  });
-}
-
-function populateMasterDeptSelects() {
-  ['removeDeptSelect'].forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '';
-    departments.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d; opt.textContent = d;
-      sel.appendChild(opt);
-    });
-  });
-}
-
-let lockDatePicker;
-function initUnlockDatePicker() {
-  if (lockDatePicker) return;
-  lockDatePicker = flatpickr('#lockDate', { locale: 'ko', maxDate: todayStr, onChange: () => refreshLockStatus() });
-}
-
-async function refreshLockStatus() {
-  const date = lockDatePicker.selectedDates[0] ? lockDatePicker.formatDate(lockDatePicker.selectedDates[0], 'Y-m-d') : '';
-  const disp = document.getElementById('lockStatusDisplay');
-  if (!date) { disp.textContent = ''; return; }
-  const res = await callApi('getDayEntries', { date });
-  if (res.ok) disp.textContent = res.locked ? '🔒 현재 잠김' : '🔓 현재 해제됨';
-}
-
-document.getElementById('lockDateBtn').addEventListener('click', async () => {
-  const date = lockDatePicker.selectedDates[0] ? lockDatePicker.formatDate(lockDatePicker.selectedDates[0], 'Y-m-d') : '';
-  const msg = document.getElementById('lockMsg');
-  if (!date) { msg.className='msg err'; msg.textContent='날짜를 선택하세요'; return; }
-  const res = await callApi('masterLockDate', { password: masterPw, date });
-  if (res.ok) { msg.className='msg ok'; msg.textContent = `${date} 잠금 완료`; refreshLockStatus(); }
-  else { msg.className='msg err'; msg.textContent = res.error; }
-});
-
-document.getElementById('unlockDateBtn').addEventListener('click', async () => {
-  const date = lockDatePicker.selectedDates[0] ? lockDatePicker.formatDate(lockDatePicker.selectedDates[0], 'Y-m-d') : '';
-  const msg = document.getElementById('lockMsg');
-  if (!date) { msg.className='msg err'; msg.textContent='날짜를 선택하세요'; return; }
-  const res = await callApi('masterUnlockDate', { password: masterPw, date });
-  if (res.ok) { msg.className='msg ok'; msg.textContent = `${date} 잠금 해제 완료`; refreshLockStatus(); }
-  else { msg.className='msg err'; msg.textContent = res.error; }
-});
-
-document.getElementById('addDeptBtn').addEventListener('click', async () => {
-  const name = document.getElementById('newDeptName').value.trim();
-  const msg = document.getElementById('deptMgmtMsg');
-  if (!name) return;
-  const res = await callApi('masterAddDept', { password: masterPw, deptName: name });
-  if (res.ok) {
-    msg.className='msg ok'; msg.textContent = '부서가 추가되었습니다.';
-    document.getElementById('newDeptName').value = '';
-    await loadDepartmentsList();
-    loadEntryTable(entryPicker.selectedDates[0] ? entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') : todayStr);
-  } else { msg.className='msg err'; msg.textContent = res.error; }
-});
-
-document.getElementById('removeDeptBtn').addEventListener('click', async () => {
-  const name = document.getElementById('removeDeptSelect').value;
-  const msg = document.getElementById('deptMgmtMsg');
-  const res = await callApi('masterRemoveDept', { password: masterPw, deptName: name });
-  if (res.ok) {
-    msg.className='msg ok'; msg.textContent = '부서가 삭제(사용중지)되었습니다.';
-    await loadDepartmentsList();
-    loadEntryTable(entryPicker.selectedDates[0] ? entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') : todayStr);
-  } else { msg.className='msg err'; msg.textContent = res.error; }
-});
-
-/* ---------- 엑셀로 과거 데이터 가져오기 (마스터 전용) ---------- */
-let importDatePicker;
-function initImportDatePicker() {
-  if (importDatePicker) return;
-  importDatePicker = flatpickr('#importDate', { locale: 'ko', maxDate: todayStr, defaultDate: todayStr });
-}
-
-/**
- * 엑셀 원본 서식(부서/구분/조회/미조회 4항목/계/합계/작성자)을 파싱합니다.
- * 구분(B열)이 '오전' 또는 '오후'인 행만 데이터로 인식하고, 그 직전에 나온 부서명을 사용합니다.
- * (제목/헤더 행 개수가 파일마다 달라도 이 방식이면 안전하게 데이터 행만 골라냅니다.)
- */
-function parseExcelRows(aoa) {
-  const result = [];
-  let currentDept = null;
-  for (let i = 0; i < aoa.length; i++) {
-    const row = aoa[i] || [];
-    const col0 = row[0], col1 = row[1];
-    if (col0 && typeof col0 === 'string' && col0.trim() && col0.trim() !== '진료과' && col0.trim() !== '부서') {
-      currentDept = col0.trim().replace(/\n/g, '');
+function renderList(){
+  const box = document.getElementById("hospListBox");
+  box.innerHTML = "";
+  let lastRegion = "";
+  HOSPITALS.forEach(([name, region])=>{
+    if(region !== lastRegion){
+      const rt = document.createElement("div");
+      rt.className = "region-title";
+      rt.textContent = region;
+      box.appendChild(rt);
+      lastRegion = region;
     }
-    if (col1 === '오전' || col1 === '오후') {
-      if (!currentDept) continue;
-      result.push({
-        dept: currentDept, ampm: col1,
-        joh: Number(row[2]) || 0, mjCert: Number(row[3]) || 0, mjPw: Number(row[4]) || 0,
-        mjRefuse: Number(row[5]) || 0, mjEtc: Number(row[6]) || 0, mjKakao: 0, // 원본 엑셀엔 카톡미사용 컬럼이 없어 0으로 처리
-        writer: row[9] != null ? String(row[9]).trim() : ''
-      });
+    const row = document.createElement("label");
+    row.className = "hitem";
+    row.dataset.name = name;
+    const isMine = name === MY_HOSPITAL;
+    const cached = loadCache(name);
+    const fresh = cached ? cacheFreshness(cached.ts) : null;
+    const cacheTag = cached ? `<span class="cache-dot ${fresh.cls}" title="캐시 ${fmtDateTime(cached.ts)} · ${fresh.label}">●</span>` : "";
+    row.innerHTML = `<input type="checkbox" ${selected.has(name)?"checked":""} onchange="toggleHosp('${name}', this.checked)">
+      <span class="${isMine?'mine':''}">${name}</span>${cacheTag}`;
+    box.appendChild(row);
+  });
+}
+function toggleHosp(name, on){ on ? selected.add(name) : selected.delete(name); }
+function selectAll(on){
+  document.querySelectorAll('#hospListBox input[type=checkbox]').forEach(cb=>{
+    if(cb.closest('.hitem').classList.contains('hidden')) return;
+    cb.checked = on;
+    toggleHosp(cb.closest('.hitem').dataset.name, on);
+  });
+}
+function selectPreset(type){
+  selected.clear();
+  if(type === "all") HOSPITALS.forEach(([n])=>selected.add(n));
+  if(type === "region") HOSPITALS.filter(([,r])=>r===MY_REGION).forEach(([n])=>selected.add(n));
+  if(type === "default") [MY_HOSPITAL,"서울대학교병원","삼성서울병원","서울아산병원"].forEach(n=>selected.add(n));
+  renderList();
+}
+function filterList(){
+  const q = document.getElementById("filterInput").value.trim();
+  document.querySelectorAll('#hospListBox .hitem').forEach(el=>{
+    el.classList.toggle("hidden", q && !el.dataset.name.includes(q));
+  });
+  document.querySelectorAll('#hospListBox .region-title').forEach(el=>{
+    let next = el.nextElementSibling, anyVisible = false;
+    while(next && !next.classList.contains('region-title')){
+      if(!next.classList.contains('hidden')) anyVisible = true;
+      next = next.nextElementSibling;
+    }
+    el.style.display = anyVisible ? "" : "none";
+  });
+}
+
+function statusMsg(t, err){
+  const el = document.getElementById("status");
+  el.textContent = t;
+  el.className = "status" + (err?" error":"");
+}
+function setServerStatus(state, text){
+  const el = document.getElementById("serverStatus");
+  el.className = `server-state ${state}`;
+  el.textContent = text;
+}
+async function checkServerConnection(){
+  setServerStatus("checking", "⏳ Apps Script 프록시 연결 확인 중…");
+  try{
+    const json = await callApi(BASIS_PATH, { yadmNm: MY_HOSPITAL, numOfRows:1 });
+    if(items(json).length){
+      setServerStatus("ok", "✅ 프록시 정상 · 인증키 서버 보관");
+    }else{
+      setServerStatus("warn", "⚠ 연결됨 · 병원정보 응답 확인 필요");
+    }
+  }catch(e){
+    setServerStatus("bad", `❌ 연결 실패 · ${e.message}`);
+  }
+}
+
+async function callApi(path, params){
+  await acquireApiSlot();
+  try{
+    const qs = new URLSearchParams(Object.assign({ path, pageNo:1, numOfRows:100 }, params));
+    let res;
+    try{
+      res = await fetch(PROXY_URL + "?" + qs.toString(), { signal: AbortSignal.timeout(15000) });
+    }catch(e){
+      if(e.name === "TimeoutError" || e.name === "AbortError") throw new Error("시간초과(15초)");
+      throw new Error("네트워크 오류: " + e.message);
+    }
+    if(!res.ok) throw new Error("프록시 응답 오류 (" + res.status + ")");
+    const json = await res.json();
+    const code = json?.response?.header?.resultCode;
+    if(code !== undefined && !["00","0000"].includes(String(code))){
+      throw new Error(json?.response?.header?.resultMsg || `API 오류(${code})`);
+    }
+    return json;
+  } finally {
+    releaseApiSlot();
+  }
+}
+function items(json){
+  try{
+    const body = json.response && json.response.body;
+    const it = body && body.items && body.items.item;
+    if(!it) return [];
+    return Array.isArray(it) ? it : [it];
+  }catch(e){ return []; }
+}
+const sleep = ms => new Promise(resolve=>setTimeout(resolve,ms));
+async function safeDetailCall(op, ykiho){
+  let lastError = null;
+  for(let attempt=0; attempt<2; attempt++){
+    try{
+      return {ok:true, json:await callApi(DETAIL_BASE_PATH + "/" + op, { ykiho })};
+    }catch(e){
+      lastError = e;
+      if(attempt===0) await sleep(250 + Math.random()*250);
     }
   }
-  return result;
+  return {ok:false, error:lastError?.message || "조회실패"};
 }
 
-let importPendingDate = null;
+async function fetchHospital(name){
+  const basis = await callApi(BASIS_PATH, { yadmNm: name });
+  const candidates = items(basis);
+  // 병원명 부분검색 결과 중 정확히 일치하는 항목 우선
+  const bi = candidates.find(x=>x.yadmNm===name) || candidates[0];
+  if(!bi) return { name, error: "검색 결과 없음" };
 
-document.getElementById('importParseBtn').addEventListener('click', async () => {
-  const msg = document.getElementById('importMsg');
-  const fileInput = document.getElementById('importFile');
-  const date = importDatePicker.selectedDates[0] ? importDatePicker.formatDate(importDatePicker.selectedDates[0], 'Y-m-d') : null;
-  if (!date) { msg.className = 'msg err'; msg.textContent = '먼저 날짜를 선택하세요.'; return; }
-  if (!fileInput.files.length) { msg.className = 'msg err'; msg.textContent = '엑셀 파일을 선택하세요.'; return; }
+  const ykiho = bi.ykiho;
+  const data = {
+    name: bi.yadmNm || name,
+    region: HOSPITAL_REGION[name] || HOSPITAL_REGION[bi.yadmNm] || "미분류",
+    drTotCnt: numOrNull(bi.drTotCnt),
+    sdrCnt: sumKnown([bi.mdeptSdrCnt, bi.detySdrCnt, bi.cmdcSdrCnt]),
+    mriCnt:null, ctCnt:null, petCnt:null, sonoCnt:null,
+    nursingGrade:null, nursingGradePpN:null,
+    dgsbjtCnt:null, spclDiagCnt:null, etcHstCnt:null,
+    permSbdCnt:null, stdSickbdCnt:null, hghrSickbdCnt:null,
+    trnsprtCnt:null, spclHospCnt:null, foepCnt:null,
+    spclDiagNames:[], etcHstDetail:{}, fieldStatus:{}, apiErrors:{},
+    ts:new Date().toISOString()
+  };
+  if(data.drTotCnt===null) data.fieldStatus.drTotCnt="missing";
+  if(data.sdrCnt===null) data.fieldStatus.sdrCnt="missing";
 
-  msg.className = 'msg'; msg.style.background = '#eef2f8'; msg.textContent = '파일 읽는 중...';
-  const file = fileInput.files[0];
-  const buf = await file.arrayBuffer();
-  let wb;
-  try {
-    wb = XLSX.read(buf, { type: 'array' });
-  } catch (e) {
-    msg.className = 'msg err'; msg.textContent = '엑셀 파일을 읽지 못했습니다: ' + e;
-    return;
-  }
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-  const parsed = parseExcelRows(aoa);
-  if (!parsed.length) {
-    msg.className = 'msg err'; msg.textContent = '엑셀에서 데이터 행을 찾지 못했습니다. 서식이 원본과 같은지 확인해주세요.';
-    return;
-  }
-
-  // 기존 데이터와 비교
-  const existingRes = await callApi('getDayEntries', { date });
-  const existingMap = {};
-  if (existingRes.ok) {
-    existingRes.rows.forEach(r => { existingMap[r.dept + '|' + r.ampm] = r; });
-  }
-
-  importPendingDate = date;
-  const tbody = document.getElementById('importPreviewBody');
-  tbody.innerHTML = '';
-  const fieldDefs = [
-    { key: 'joh', existKey: 'joh' },
-    { key: 'mjCert', existKey: 'mj_cert' },
-    { key: 'mjPw', existKey: 'mj_pw' },
-    { key: 'mjRefuse', existKey: 'mj_refuse' },
-    { key: 'mjEtc', existKey: 'mj_etc' },
-    { key: 'mjKakao', existKey: 'mj_kakao' }
+  const detailCalls = [
+    "getMedOftInfo2.8","getNursigGrdInfo2.8","getDgsbjtInfo2.8",
+    "getSpclDiagInfo2.8","getEtcHstInfo2.8","getDtlInfo2.8",
+    "getTrnsprtInfo2.8","getSpclHospAsgFldList2.8","getFoepAddcInfo2.8",
   ];
-  parsed.forEach((row, i) => {
-    const key = row.dept + '|' + row.ampm;
-    const existing = existingMap[key];
-    const existingTotal = existing ? Number(existing.total) || 0 : 0;
-    const excelTotal = row.joh + row.mjCert + row.mjPw + row.mjRefuse + row.mjEtc + row.mjKakao;
-    let status, checked = true, statusColor = '';
-    let anyFieldDiff = false;
+  const results = await Promise.all(detailCalls.map(op => safeDetailCall(op, ykiho)));
+  const [eqpR, nursR, dgsR, spclR, etcR, dtlR, trnsR, spclHospR, foepR] = results;
+  const markError = (result, keys, op)=>{
+    if(result.ok) return false;
+    keys.forEach(k=>data.fieldStatus[k]="error");
+    data.apiErrors[op] = result.error || "조회실패";
+    return true;
+  };
 
-    const fieldCells = fieldDefs.map(f => {
-      const oldV = existing ? (Number(existing[f.existKey]) || 0) : null;
-      const newV = row[f.key];
-      if (oldV === null) return `<td>${newV}</td>`; // 신규
-      if (oldV !== newV) { anyFieldDiff = true; return `<td style="color:var(--red);font-weight:700;">${oldV}→${newV}</td>`; }
-      return `<td>${newV}</td>`;
-    }).join('');
-
-    if (!existing || existingTotal === 0) { status = '신규'; statusColor = 'var(--green)'; }
-    else if (!anyFieldDiff) { status = '동일'; checked = false; statusColor = 'var(--muted)'; }
-    else { status = '⚠️ 값이 다름'; statusColor = 'var(--red)'; }
-
-    const totalCell = existing && existingTotal !== excelTotal
-      ? `<td style="color:var(--red);font-weight:700;">${existingTotal}→${excelTotal}</td>`
-      : `<td>${excelTotal}</td>`;
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><input type="checkbox" data-idx="${i}" ${checked ? 'checked' : ''}></td>
-      <td>${row.dept}</td><td>${row.ampm}</td>
-      ${fieldCells}${totalCell}
-      <td style="color:${statusColor};font-weight:600;">${status}</td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('importPreviewWrap').style.display = 'block';
-  document.getElementById('importPreviewTable').dataset.parsed = JSON.stringify(parsed);
-  msg.className = 'msg ok'; msg.textContent = `${parsed.length}개 항목을 읽었습니다. 아래에서 반영할 항목을 확인하세요 (기본: 신규/값이 다른 항목만 체크됨).`;
-});
-
-document.getElementById('importConfirmBtn').addEventListener('click', async () => {
-  const table = document.getElementById('importPreviewTable');
-  const parsed = JSON.parse(table.dataset.parsed || '[]');
-  const checked = Array.from(table.querySelectorAll('input[type=checkbox]:checked')).map(cb => parsed[Number(cb.dataset.idx)]);
-  const msg = document.getElementById('importMsg');
-  if (!checked.length) { msg.className = 'msg err'; msg.textContent = '체크된 항목이 없습니다.'; return; }
-
-  msg.className = 'msg'; msg.style.background = '#eef2f8'; msg.textContent = '반영하는 중...';
-  const res = await callApi('masterImportRows', { password: masterPw, date: importPendingDate, entries: checked });
-  if (res.ok) {
-    msg.className = 'msg ok'; msg.textContent = `✅ ${res.imported}건 반영 완료 (${importPendingDate})`;
-    document.getElementById('importPreviewWrap').style.display = 'none';
-    document.getElementById('importFile').value = '';
-  } else {
-    msg.className = 'msg err'; msg.textContent = '오류: ' + res.error;
+  if(!markError(eqpR,["mriCnt","ctCnt","petCnt","sonoCnt"],"장비")){
+    data.mriCnt=0; data.ctCnt=0; data.petCnt=0; data.sonoCnt=0;
+    items(eqpR.json).forEach(e=>{
+      const nm = (e.oftCdNm||"").toUpperCase();
+      const c = numOrNull(e.oftCnt) ?? 0;
+      if(nm.includes("MRI") || nm.includes("자기공명")) data.mriCnt += c;
+      if(nm.includes("CT") || nm.includes("전산화") || nm.includes("단층")) data.ctCnt += c;
+      if(nm.includes("PET") || nm.includes("양전자")) data.petCnt += c;
+      if(nm.includes("초음파")) data.sonoCnt += c;
+    });
   }
-});
 
-/* ---------- 해당 날짜 전체 삭제 (2단계 확인) ---------- */
-let deleteDatePicker;
-function initDeleteDatePicker() {
-  if (deleteDatePicker) return;
-  deleteDatePicker = flatpickr('#deleteDate', { locale: 'ko', maxDate: todayStr });
+  if(!markError(nursR,["nursingGrade","nursingGradePpN"],"간호등급")){
+    const nursItems = items(nursR.json);
+    const oldGrade = nursItems.find(n => String(n.tyCd) === "01");
+    const currentGrade = nursItems.find(n => String(n.tyCd) === "05");
+    data.nursingGrade = oldGrade?.careGrd ?? null;
+    data.nursingGradePpN = currentGrade?.careGrd ?? null;
+    if(data.nursingGrade===null) data.fieldStatus.nursingGrade="missing";
+    if(data.nursingGradePpN===null) data.fieldStatus.nursingGradePpN="missing";
+  }
+
+  if(!markError(dgsR,["dgsbjtCnt"],"진료과목")) data.dgsbjtCnt = items(dgsR.json).length;
+  if(!markError(spclR,["spclDiagCnt","spclDiagNames"],"특수진료")){
+    data.spclDiagCnt = items(spclR.json).length;
+    data.spclDiagNames = items(spclR.json).map(s=>s.srchCdNm).filter(Boolean);
+  }
+  if(!markError(etcR,["etcHstCnt","etcHstDetail"],"기타인력")){
+    const list = items(etcR.json);
+    data.etcHstCnt = list.reduce((s,e)=> s + (numOrNull(e.gnlNopCnt) ?? 0), 0);
+    list.forEach(e=>{
+      const job = e.dtlGnlNopCdNm || "기타";
+      data.etcHstDetail[job] = (data.etcHstDetail[job]||0) + (numOrNull(e.gnlNopCnt) ?? 0);
+    });
+  }
+
+  if(!markError(dtlR,["permSbdCnt","stdSickbdCnt","hghrSickbdCnt"],"병상")){
+    const dtlItem = items(dtlR.json)[0];
+    if(dtlItem){
+      data.permSbdCnt = numOrNull(dtlItem.permSbdCnt);
+      data.stdSickbdCnt = numOrNull(dtlItem.stdSickbdCnt);
+      data.hghrSickbdCnt = numOrNull(dtlItem.hghrSickbdCnt);
+      ["permSbdCnt","stdSickbdCnt","hghrSickbdCnt"].forEach(k=>{ if(data[k]===null) data.fieldStatus[k]="missing"; });
+    }else{
+      ["permSbdCnt","stdSickbdCnt","hghrSickbdCnt"].forEach(k=>data.fieldStatus[k]="missing");
+    }
+  }
+  if(!markError(trnsR,["trnsprtCnt"],"교통정보")) data.trnsprtCnt = items(trnsR.json).length;
+  if(!markError(spclHospR,["spclHospCnt"],"전문병원지정")) data.spclHospCnt = items(spclHospR.json).length;
+  if(!markError(foepR,["foepCnt"],"식대가산")) data.foepCnt = items(foepR.json).length;
+
+  return data;
 }
 
-let deleteArmed = false;
-let deleteArmTimer = null;
-document.getElementById('deleteDateBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('deleteDateBtn');
-  const msg = document.getElementById('deleteDateMsg');
-  const date = deleteDatePicker.selectedDates[0] ? deleteDatePicker.formatDate(deleteDatePicker.selectedDates[0], 'Y-m-d') : '';
-  if (!date) { msg.className = 'msg err'; msg.textContent = '삭제할 날짜를 선택하세요.'; return; }
+async function runPool(list, worker, onProgress){
+  const results = new Array(list.length);
+  let idx = 0, done = 0;
+  async function next(){
+    while(idx < list.length){
+      const my = idx++;
+      try{ results[my] = await worker(list[my]); }
+      catch(e){ results[my] = { name:list[my], error:e.message }; }
+      done++;
+      onProgress(done, list.length);
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(CONCURRENCY,list.length)}, next));
+  return results;
+}
 
-  if (!deleteArmed) {
-    deleteArmed = true;
-    btn.textContent = `정말요? 다시 누르면 ${date} 전체 삭제됩니다`;
-    clearTimeout(deleteArmTimer);
-    deleteArmTimer = setTimeout(() => { deleteArmed = false; btn.textContent = '이 날짜 전체 삭제'; }, 4000);
+async function runCompare(){
+  const list = [...selected];
+  if(list.length === 0){ statusMsg("병원을 1곳 이상 선택해주세요.", true); return; }
+  const btn = document.getElementById("runBtn");
+  btn.disabled = true;
+  document.getElementById("emptyHint").style.display = "none";
+  document.getElementById("results").style.display = "none";
+  document.getElementById("exportBtn").style.display = "none";
+  document.getElementById("viewToggle").style.display = "none";
+  document.getElementById("progTrack").style.display = "block";
+  document.getElementById("progFill").style.width = "0%";
+  document.getElementById("dataStamp").textContent = "";
+
+  const startedAt = Date.now();
+  const elapsedStr = () => ((Date.now()-startedAt)/1000).toFixed(1) + "초";
+  const timerId = setInterval(()=>{
+    document.getElementById("elapsedTime").textContent = "⏱ 경과 " + elapsedStr();
+  }, 500);
+  document.getElementById("elapsedTime").style.display = "inline";
+
+  const worker = async name=>{
+    const d = await fetchHospital(name);
+    if(!d.error) saveCache(d);
+    return d;
+  };
+  const onProgress = (done,total)=>{
+    document.getElementById("progFill").style.width = Math.round(done/total*100) + "%";
+    statusMsg(`수집 중… ${done}/${total} (병원 동시 ${CONCURRENCY} · 전체 API 최대 ${MAX_API_INFLIGHT})`);
+  };
+
+  statusMsg(`${list.length}개 병원 수집 중…`);
+  collected = await runPool(list, worker, onProgress);
+
+  let retryRound = 0;
+  while(collected.some(d=>d.error) && retryRound < 2 && CONCURRENCY > 1){
+    const failedNames = collected.filter(d=>d.error).map(d=>d.name);
+    CONCURRENCY = Math.max(1, Math.floor(CONCURRENCY/2));
+    document.getElementById("concSlider").value = CONCURRENCY;
+    document.getElementById("concLabel").textContent = CONCURRENCY;
+    statusMsg(`${failedNames.length}곳 재시도 중… (병원 동시 처리 ${CONCURRENCY}로 자동 조정)`);
+    const retried = await runPool(failedNames, worker, onProgress);
+    const retriedMap = Object.fromEntries(retried.map(d=>[d.name, d]));
+    collected = collected.map(d => d.error && retriedMap[d.name] ? retriedMap[d.name] : d);
+    retryRound++;
+  }
+
+  clearInterval(timerId);
+  btn.disabled = false;
+  document.getElementById("progTrack").style.display = "none";
+  document.getElementById("elapsedTime").style.display = "none";
+  const ok = collected.filter(d=>!d.error);
+  const totalSec = ((Date.now()-startedAt)/1000).toFixed(1);
+  const timeoutCnt = collected.filter(d=>d.error && d.error.includes("시간초과")).length;
+  if(ok.length === 0){
+    statusMsg(`수집된 데이터가 없습니다. (${totalSec}초 소요)`, true);
+    document.getElementById("emptyHint").style.display="block";
     return;
   }
+  const detailErrHospCnt = ok.filter(d=>Object.keys(d.apiErrors||{}).length).length;
+  const failNote = timeoutCnt > 0 ? ` · 병원 자체 조회 시간초과 ${timeoutCnt}곳` : "";
+  const detailNote = detailErrHospCnt ? ` · 일부 세부항목 조회실패 ${detailErrHospCnt}곳` : "";
+  statusMsg(`${ok.length}개 병원 수집 완료 · ${totalSec}초${failNote}${detailNote}`);
+  renderResults(ok);
+  renderList();
+  document.getElementById("exportBtn").style.display = "inline-block";
+  document.getElementById("viewToggle").style.display = "flex";
+}
 
-  deleteArmed = false;
-  clearTimeout(deleteArmTimer);
-  btn.textContent = '이 날짜 전체 삭제';
-  btn.disabled = true;
-  msg.className = 'msg'; msg.style.background = '#eef2f8'; msg.textContent = '삭제 중...';
-  const res = await callApi('masterDeleteDate', { password: masterPw, date });
-  btn.disabled = false;
-  if (res.ok) {
-    msg.className = 'msg ok'; msg.textContent = `${date} 데이터 ${res.deleted}건 삭제 완료`;
-    if (entryPicker.selectedDates[0] && entryPicker.formatDate(entryPicker.selectedDates[0], 'Y-m-d') === date) {
-      loadEntryTable(date);
-    }
-  } else {
-    msg.className = 'msg err'; msg.textContent = '오류: ' + res.error;
+function tryLoadCache(){
+  const cachedList = [...selected].map(loadCache).filter(Boolean);
+  if(cachedList.length === 0){ statusMsg("선택 병원 중 캐시된 데이터가 없습니다. 먼저 조회해주세요.", true); return; }
+  collected = cachedList;
+  document.getElementById("emptyHint").style.display = "none";
+  renderResults(cachedList);
+  document.getElementById("exportBtn").style.display = "inline-block";
+  document.getElementById("viewToggle").style.display = "flex";
+  const oldCnt = cachedList.filter(d=>cacheFreshness(d.ts).cls==="old").length;
+  statusMsg(`캐시에서 ${cachedList.length}개 병원 데이터를 불러왔습니다.${oldCnt?` · 7일 초과 ${oldCnt}곳`:""}`);
+}
+
+const METRIC_GROUPS = [
+  { title:"의료 인력", metrics:[
+    { key:"drTotCnt", title:"의사총수", unit:"명" },
+    { key:"sdrCnt", title:"전문의 수 (의과+치과+한방)", unit:"명" },
+    { key:"etcHstCnt", title:"기타 인력 총수", unit:"명" },
+  ]},
+  { title:"특수 장비", metrics:[
+    { key:"mriCnt", title:"MRI 보유대수", unit:"대" },
+    { key:"ctCnt", title:"CT 보유대수", unit:"대" },
+    { key:"petCnt", title:"PET 보유대수", unit:"대" },
+    { key:"sonoCnt", title:"초음파 보유대수", unit:"대" },
+  ]},
+  { title:"진료 범위", metrics:[
+    { key:"dgsbjtCnt", title:"운영 진료과목 수", unit:"개" },
+    { key:"spclDiagCnt", title:"특수진료 가능분야 수", unit:"개" },
+  ]},
+  { title:"병상 현황", note:"API가 값을 제공하지 않으면 0이 아니라 ‘—’, 호출 자체가 실패하면 ‘조회실패’로 구분합니다.", metrics:[
+    { key:"permSbdCnt", title:"허가병상수", unit:"병상" },
+    { key:"stdSickbdCnt", title:"일반병상수", unit:"병상" },
+    { key:"hghrSickbdCnt", title:"상급병상수", unit:"병상" },
+  ]},
+  { title:"기타 행정·참고 정보", collapsed:true, metrics:[
+    { key:"trnsprtCnt", title:"교통정보 등록 항목 수", unit:"건" },
+    { key:"foepCnt", title:"식대가산 등록 항목 수", unit:"건" },
+    { key:"spclHospCnt", title:"전문병원 지정분야 수", unit:"개 · 참고용" },
+  ]},
+];
+
+function fieldState(d,key){ return d.fieldStatus?.[key] || "ok"; }
+function metricText(d,key, unit=""){
+  const v = d[key];
+  const state = fieldState(d,key);
+  if(!isNum(v)){
+    if(state === "error") return `<span class="data-error">조회실패</span>`;
+    return `<span class="data-missing">—</span>`;
   }
-});
+  return `${v.toLocaleString()}${unit ? ` <span class="tiny-unit">${unit}</span>`:""}`;
+}
+function rawMetricText(d,key){
+  const v=d[key], state=fieldState(d,key);
+  if(!isNum(v)) return state==="error" ? "조회실패" : "—";
+  return v.toLocaleString();
+}
+function median(arr){
+  const a = arr.filter(isNum).sort((x,y)=>x-y);
+  if(!a.length) return null;
+  const mid = Math.floor(a.length/2);
+  return a.length%2 ? a[mid] : (a[mid-1]+a[mid])/2;
+}
+function rankOf(value, arr){
+  if(!isNum(value)) return null;
+  const a=arr.filter(isNum);
+  if(!a.length) return null;
+  return 1 + a.filter(v=>v>value).length;
+}
+function rankLabel(value, data, key){
+  const vals=data.map(d=>d[key]).filter(isNum);
+  const rank=rankOf(value, vals);
+  return rank ? `${rank}/${vals.length}` : "—";
+}
+function pctDiff(value, med){
+  if(!isNum(value) || !isNum(med)) return "—";
+  if(med===0) return value===0 ? "0%" : "비교불가";
+  const p=(value-med)/med*100;
+  return `${p>=0?"+":""}${p.toFixed(1)}%`;
+}
+function fmtMedian(v, unit){
+  if(!isNum(v)) return "—";
+  const shown = Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined,{maximumFractionDigits:1});
+  return `${shown}${unit}`;
+}
 
-/* ---------- 초기화 ---------- */
-loadDepartmentsList();
-initEntryDatePicker();
-loadEntryTable(todayStr);
-loadDatesWithData();
+const BENCH_METRICS = [
+  {key:"drTotCnt", title:"의사총수", unit:"명"},
+  {key:"sdrCnt", title:"전문의", unit:"명"},
+  {key:"permSbdCnt", title:"허가병상", unit:"병상"},
+  {key:"mriCnt", title:"MRI", unit:"대"},
+  {key:"ctCnt", title:"CT", unit:"대"},
+  {key:"dgsbjtCnt", title:"진료과목", unit:"개"},
+];
+function benchmarkSummary(data){
+  const me=data.find(d=>d.name===MY_HOSPITAL);
+  if(!me){
+    return `<div class="benchmark-card notice"><strong>${MY_HOSPITAL}</strong>을 선택하면 조회군·${MY_REGION} 내 순위와 중앙값 대비를 자동 계산합니다.</div>`;
+  }
+  const regionData=data.filter(d=>(d.region||HOSPITAL_REGION[d.name])===MY_REGION);
+  const allLabel = data.length===HOSPITALS.length ? `상급종합병원 ${data.length}개` : `현재 조회군 ${data.length}개`;
+  const regionLabel = regionData.length===HOSPITALS.filter(([,r])=>r===MY_REGION).length ? `${MY_REGION} 전체 ${regionData.length}개` : `${MY_REGION} 조회 ${regionData.length}개`;
+  const rows=BENCH_METRICS.map(m=>{
+    const med=median(data.map(d=>d[m.key]));
+    const regionMed=median(regionData.map(d=>d[m.key]));
+    const state=fieldState(me,m.key);
+    const myVal=isNum(me[m.key]) ? `${me[m.key].toLocaleString()}${m.unit}` : (state==="error"?"조회실패":"—");
+    return `<tr>
+      <td>${m.title}</td>
+      <td class="strong">${myVal}</td>
+      <td>${rankLabel(me[m.key],data,m.key)}</td>
+      <td>${fmtMedian(med,m.unit)}</td>
+      <td>${pctDiff(me[m.key],med)}</td>
+      <td>${rankLabel(me[m.key],regionData,m.key)}</td>
+      <td>${fmtMedian(regionMed,m.unit)}</td>
+    </tr>`;
+  }).join("");
+  return `<section class="benchmark-card">
+    <div class="benchmark-head">
+      <div>
+        <div class="bench-eyebrow">BENCHMARK SUMMARY</div>
+        <h3>${MY_HOSPITAL}</h3>
+      </div>
+      <div class="bench-chips"><span>${allLabel}</span><span>${regionLabel}</span></div>
+    </div>
+    <div class="benchmark-table-wrap"><table class="benchmark-table">
+      <thead><tr><th>지표</th><th>우리병원</th><th>조회군 순위</th><th>조회군 중앙값</th><th>중앙값 대비</th><th>${MY_REGION} 순위</th><th>권역 중앙값</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="benchmark-foot">※ 순위는 실제로 조회된 병원만을 기준으로 계산합니다. 전체 47개 선택 시에만 47개 전체 순위가 됩니다.</div>
+  </section>`;
+}
+
+function scaleAdjustedSummary(data){
+  const me=data.find(d=>d.name===MY_HOSPITAL);
+  if(!me) return "";
+  if(!isNum(me.permSbdCnt) || me.permSbdCnt<=0){
+    return `<section class="ratio-card"><div class="ratio-title">규모 보정 지표 <span>허가병상 기준</span></div><div class="ratio-empty">허가병상 데이터가 확인되면 100병상당 인력 및 1,000병상당 장비를 자동 계산합니다.</div></section>`;
+  }
+  const defs=[
+    {key:"drTotCnt",title:"100병상당 의사",scale:100,unit:"명"},
+    {key:"sdrCnt",title:"100병상당 전문의",scale:100,unit:"명"},
+    {key:"mriCnt",title:"1,000병상당 MRI",scale:1000,unit:"대"},
+    {key:"ctCnt",title:"1,000병상당 CT",scale:1000,unit:"대"},
+    {key:"petCnt",title:"1,000병상당 PET",scale:1000,unit:"대"},
+  ];
+  const calc=(d,def)=> isNum(d[def.key])&&isNum(d.permSbdCnt)&&d.permSbdCnt>0 ? d[def.key]/d.permSbdCnt*def.scale : null;
+  const cards=defs.map(def=>{
+    const my=calc(me,def);
+    const vals=data.map(d=>calc(d,def)).filter(isNum);
+    const med=median(vals);
+    return `<div class="ratio-item"><div class="ratio-label">${def.title}</div><div class="ratio-value">${isNum(my)?my.toFixed(1):"—"}<small>${def.unit}</small></div><div class="ratio-sub">조회군 중앙값 ${isNum(med)?med.toFixed(1):"—"}</div></div>`;
+  }).join("");
+  return `<section class="ratio-card"><div class="ratio-title">규모 보정 지표 <span>허가병상수 기준 · 참고지표</span></div><div class="ratio-grid">${cards}</div></section>`;
+}
+
+function renderDataStamp(data){
+  const stamps=data.map(d=>d.ts).filter(Boolean).map(x=>new Date(x)).filter(d=>!Number.isNaN(d.getTime()));
+  if(!stamps.length){ document.getElementById("dataStamp").textContent="조회시각 정보 없음"; return; }
+  const min=new Date(Math.min(...stamps.map(d=>d.getTime())));
+  const max=new Date(Math.max(...stamps.map(d=>d.getTime())));
+  const old=data.filter(d=>cacheFreshness(d.ts).cls==="old").length;
+  const same=Math.abs(max-min)<60000;
+  document.getElementById("dataStamp").innerHTML = `데이터 조회시각: <strong>${fmtDateTime(max.toISOString())}</strong>${same?"":` · 혼합 캐시 (가장 오래된 ${fmtDateTime(min.toISOString())})`}${old?` · <span class="old-data">7일 초과 ${old}곳</span>`:""}`;
+}
+
+function barCard(m, data){
+  const {key,title,unit}=m;
+  const valid=data.filter(d=>isNum(d[key]));
+  const max=Math.max(...valid.map(d=>d[key]),1);
+  const sorted=[...data].sort((a,b)=>{
+    const av=isNum(a[key])?a[key]:-Infinity, bv=isNum(b[key])?b[key]:-Infinity;
+    return bv-av;
+  });
+  let rankCounter=0;
+  const rows=sorted.map(d=>{
+    const has=isNum(d[key]);
+    if(has) rankCounter++;
+    const pct=has ? Math.round(d[key]/max*100) : 0;
+    const isMine=d.name===MY_HOSPITAL;
+    const isRank1=has && rankCounter===1;
+    const fillCls="bar-fill"+(isMine?" me":(isRank1?" rank1":""));
+    return `<div class="bar-row">
+      <div class="name${isMine?' me':''}" title="${d.name}">${d.name}</div>
+      <div class="bar-track ${has?'':'na'}"><div class="${fillCls}" style="width:${pct}%"></div></div>
+      <div class="val">${metricText(d,key)}</div>
+    </div>`;
+  }).join("");
+  return `<div class="metric-card"><div class="mhead"><div class="mtitle">${title}</div><div class="munit">${unit}</div></div>${rows}</div>`;
+}
+function gradeFmt(d,key){
+  const v=d[key], state=fieldState(d,key);
+  if(v===null || v===undefined || v==="") return state==="error" ? "조회실패" : "정보없음";
+  return `${v}등급`;
+}
+function gradeCard(data){
+  const rows=data.map(d=>{
+    const isMine=d.name===MY_HOSPITAL;
+    return `<div class="grade-row">
+      <div class="${isMine?'mine-name':''}">${d.name}</div>
+      <div class="grade-values">
+        <span class="current-label">현재 적용</span><span class="grade-badge current">${gradeFmt(d,"nursingGradePpN")}</span><span class="grade-note">환자수 기준</span>
+        <span class="grade-divider">|</span><span class="grade-badge old">${gradeFmt(d,"nursingGrade")}</span><span class="grade-note">종전 병상수 기준</span>
+      </div>
+    </div>`;
+  }).join("");
+  return `<div class="metric-card"><div class="mhead"><div class="mtitle">간호등급 (건강보험)</div><div class="munit">환자수 기준을 현재 적용값으로 강조</div></div>${rows}</div>`;
+}
+function groupTable(group,data){
+  const head=`<th style="text-align:left;">병원</th>`+group.metrics.map(m=>`<th>${m.title}</th>`).join("");
+  const rows=data.map(d=>{
+    const isMine=d.name===MY_HOSPITAL;
+    const cells=group.metrics.map(m=>`<td class="numcell">${metricText(d,m.key)}</td>`).join("");
+    return `<tr class="${isMine?'mine-row':''}"><td class="hospital-cell">${d.name}</td>${cells}</tr>`;
+  }).join("");
+  return `<div class="metric-card table-card"><table class="metric-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function etcHstDetailCard(data){
+  const rows=data.map(d=>{
+    const isMine=d.name===MY_HOSPITAL;
+    const jobs=Object.entries(d.etcHstDetail||{}).filter(([,c])=>c>0).sort((a,b)=>b[1]-a[1])
+      .map(([job,cnt])=>`<span class="job-chip">${job} ${cnt}명</span>`).join("");
+    const status=fieldState(d,"etcHstCnt");
+    const empty=status==="error"?'<span class="data-error">조회실패</span>':'<span class="data-missing">등록된 직종 없음</span>';
+    return `<div class="detail-item"><div class="detail-name ${isMine?'mine-name':''}">${d.name} <span>(총 ${rawMetricText(d,"etcHstCnt")}명)</span></div><div>${jobs||empty}</div></div>`;
+  }).join("");
+  return `<div class="metric-card"><div class="mhead"><div class="mtitle">기타 인력 직종별 상세</div><div class="munit">약사·물리치료사 등</div></div><div class="minor-note">의사·간호사는 포함되지 않습니다.</div>${rows}</div>`;
+}
+function spclDiagListCard(data){
+  const rows=data.map(d=>{
+    const isMine=d.name===MY_HOSPITAL;
+    const state=fieldState(d,"spclDiagCnt");
+    const names=(d.spclDiagNames||[]).join(", ");
+    const body=state==="error"?'<span class="data-error">조회실패</span>':(names||"등록된 분야 없음");
+    return `<details class="detail-item"><summary class="${isMine?'mine-name':''}">${d.name} <span>(${rawMetricText(d,"spclDiagCnt")}개 · 클릭해서 목록보기)</span></summary><div class="detail-body">${body}</div></details>`;
+  }).join("");
+  return `<div class="metric-card"><div class="mhead"><div class="mtitle">특수진료 가능분야 목록</div><div class="munit">병원명 클릭 시 펼침</div></div>${rows}</div>`;
+}
+function groupSectionHtml(group,data){
+  let body;
+  if(group.special==="grade") body=gradeCard(data);
+  else if(group.special==="etcHstDetail") body=etcHstDetailCard(data);
+  else if(group.special==="spclDiagList") body=spclDiagListCard(data);
+  else if(viewMode==="table") body=groupTable(group,data);
+  else body=group.metrics.map(m=>barCard(m,data)).join("");
+
+  const inner=`${group.note?`<div class="group-note">${group.note}</div>`:""}<div class="group-body">${body}</div>`;
+  if(group.collapsed){
+    return `<details class="group-section collapsed-group"><summary class="group-title collapsible">${group.title}<span>펼쳐보기</span></summary>${inner}</details>`;
+  }
+  return `<div class="group-section"><div class="group-title">${group.title}</div>${inner}</div>`;
+}
+function setViewMode(mode){
+  viewMode=mode;
+  document.getElementById("viewGraphBtn").classList.toggle("on",mode==="graph");
+  document.getElementById("viewTableBtn").classList.toggle("on",mode==="table");
+  const ok=collected.filter(d=>!d.error);
+  if(ok.length) renderResults(ok);
+}
+function renderResults(data){
+  const box=document.getElementById("results");
+  box.style.display="flex";
+  box.style.flexDirection="column";
+  box.style.gap="22px";
+  const groups=[
+    METRIC_GROUPS[0], {title:"기타 인력 직종별 상세",special:"etcHstDetail"},
+    METRIC_GROUPS[1], {title:"간호등급",special:"grade"},
+    METRIC_GROUPS[2], {title:"특수진료 가능분야 목록",special:"spclDiagList"},
+    METRIC_GROUPS[3], METRIC_GROUPS[4],
+  ];
+  const detailErrorTotal=data.reduce((s,d)=>s+Object.keys(d.apiErrors||{}).length,0);
+  const legend = `표시 기준: <strong>0</strong>=API가 실제 0 반환 · <strong>—</strong>=값 미제공 · <strong>조회실패</strong>=API 호출 실패`;
+  const qualityNote=detailErrorTotal ? `<div class="quality-alert">⚠ 일부 세부 API 조회실패 ${detailErrorTotal}건은 0으로 처리하지 않았습니다. · ${legend}</div>` : `<div class="quality-ok">✓ 조회된 세부 API에서 오류가 감지되지 않았습니다. · ${legend}</div>`;
+  box.innerHTML=benchmarkSummary(data)+scaleAdjustedSummary(data)+qualityNote+groups.map(g=>groupSectionHtml(g,data)).join("");
+  renderDataStamp(data);
+}
+
+function exportExcel(){
+  const data=collected.filter(d=>!d.error);
+  if(!data.length) return;
+  const rows=data.map(d=>({
+    "병원명":d.name,"권역":d.region||HOSPITAL_REGION[d.name],"데이터조회시각":d.ts?fmtDateTime(d.ts):"",
+    "의사총수":d.drTotCnt,"전문의수":d.sdrCnt,"MRI":d.mriCnt,"CT":d.ctCnt,"PET":d.petCnt,"초음파":d.sonoCnt,
+    "간호등급(환자수기준,건보)":d.nursingGradePpN,"간호등급(병상수기준,건보)":d.nursingGrade,"진료과목수":d.dgsbjtCnt,
+    "특수진료분야수":d.spclDiagCnt,"기타인력총수":d.etcHstCnt,"허가병상수":d.permSbdCnt,"일반병상수":d.stdSickbdCnt,"상급병상수":d.hghrSickbdCnt,
+    "교통정보항목수":d.trnsprtCnt,"전문병원지정분야수":d.spclHospCnt,"식대가산항목수":d.foepCnt,
+    "조회실패API":Object.entries(d.apiErrors||{}).map(([k,v])=>`${k}: ${v}`).join(" | "),
+    "100병상당의사":isNum(d.drTotCnt)&&isNum(d.permSbdCnt)&&d.permSbdCnt>0?d.drTotCnt/d.permSbdCnt*100:null,
+    "100병상당전문의":isNum(d.sdrCnt)&&isNum(d.permSbdCnt)&&d.permSbdCnt>0?d.sdrCnt/d.permSbdCnt*100:null,
+    "1000병상당MRI":isNum(d.mriCnt)&&isNum(d.permSbdCnt)&&d.permSbdCnt>0?d.mriCnt/d.permSbdCnt*1000:null,
+    "1000병상당CT":isNum(d.ctCnt)&&isNum(d.permSbdCnt)&&d.permSbdCnt>0?d.ctCnt/d.permSbdCnt*1000:null,
+  }));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,"병원비교");
+
+  const me=data.find(d=>d.name===MY_HOSPITAL);
+  if(me){
+    const regionData=data.filter(d=>(d.region||HOSPITAL_REGION[d.name])===MY_REGION);
+    const bench=BENCH_METRICS.map(m=>{
+      const med=median(data.map(d=>d[m.key]));
+      const rmed=median(regionData.map(d=>d[m.key]));
+      return {"지표":m.title,"우리병원":me[m.key],"조회군순위":rankLabel(me[m.key],data,m.key),"조회군중앙값":med,"중앙값대비":pctDiff(me[m.key],med),"권역순위":rankLabel(me[m.key],regionData,m.key),"권역중앙값":rmed};
+    });
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(bench),"벤치마크요약");
+  }
+  XLSX.writeFile(wb,`병원인프라비교_v${APP_VERSION}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function initApp(){
+  document.title=`타병원 인프라 비교 v${APP_VERSION}`;
+  document.getElementById("versionBadge").textContent=`v${APP_VERSION}`;
+  document.getElementById("mainVersion").textContent=`v${APP_VERSION}`;
+  renderList();
+  checkServerConnection();
+}
+initApp();
 </script>
+
 </body>
 </html>
